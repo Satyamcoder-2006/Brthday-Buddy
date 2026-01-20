@@ -29,6 +29,7 @@ export const SocialShareScreen = () => {
     const getPhotoUrl = (path?: string | null) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
+        if (!supabase) return null;
         return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
     };
 
@@ -166,6 +167,7 @@ export const SocialShareScreen = () => {
             <CustomizationPanel
                 state={cardState}
                 onChange={setCardState}
+                birthday={birthday}
             />
 
             {/* Actions */}

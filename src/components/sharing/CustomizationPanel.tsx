@@ -4,15 +4,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { CardState, LayoutId, ColorTheme } from './types';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 
+import { getCardMessageSuggestions } from '../../services/ai';
+import { Birthday } from '../../types';
+
 interface Props {
     state: CardState;
     onChange: (newState: CardState) => void;
+    birthday: Birthday;
 }
 
 type Tab = 'layout' | 'color' | 'text' | 'stickers' | 'photo';
 
-export const CustomizationPanel = ({ state, onChange }: Props) => {
+export const CustomizationPanel = ({ state, onChange, birthday }: Props) => {
     const [activeTab, setActiveTab] = useState<Tab>('layout');
+    const [aiMessages, setAiMessages] = useState<string[]>(['Happy Birthday! 🎂', 'Best Year Yet! ✨', 'HBD! 🎈', 'Cheers! 🥂', 'Legend! 👑', 'Make a Wish! 🌟']);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerateAI = async () => {
+        setIsGenerating(true);
+        try {
+            const msgs = await getCardMessageSuggestions(birthday);
+            setAiMessages(msgs);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const updateState = (updates: Partial<CardState>) => {
         onChange({ ...state, ...updates });
@@ -125,6 +143,32 @@ export const CustomizationPanel = ({ state, onChange }: Props) => {
                 {/* TEXT EDITOR */}
                 {activeTab === 'text' && (
                     <View style={styles.textEditor}>
+                        <View style={styles.aiHeader}>
+                            <Text style={styles.sectionLabel}>Suggested Wishes</Text>
+                            <TouchableOpacity
+                                style={[styles.aiGenerateBtn, isGenerating && styles.aiGenerating]}
+                                onPress={handleGenerateAI}
+                                disabled={isGenerating}
+                            >
+                                <Ionicons name="sparkles" size={12} color={colors.primary} />
+                                <Text style={styles.aiGenerateText}>
+                                    {isGenerating ? 'GEN...' : 'AI REFRESH'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestedScroll}>
+                            {aiMessages.map(msg => (
+                                <TouchableOpacity
+                                    key={msg}
+                                    style={styles.suggestionChip}
+                                    onPress={() => updateState({ customMessage: msg })}
+                                >
+                                    <View style={styles.chipContent}>
+                                        <Text style={styles.suggestionText}>{msg}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                         <View style={styles.inputRow}>
                             <TextInput
                                 style={styles.input}
@@ -296,6 +340,22 @@ const styles = StyleSheet.create({
     textEditor: {
         padding: spacing.md,
     },
+    suggestedScroll: {
+        marginBottom: spacing.sm,
+    },
+    suggestionChip: {
+        backgroundColor: '#333',
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 4,
+        borderRadius: borderRadius.sm,
+        marginRight: spacing.xs,
+        borderWidth: 1,
+        borderColor: '#444',
+    },
+    suggestionText: {
+        color: colors.textSecondary,
+        fontSize: 12,
+    },
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -310,6 +370,43 @@ const styles = StyleSheet.create({
     },
     addBtn: {
         marginLeft: spacing.sm,
+    },
+    aiHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+        paddingHorizontal: 4,
+    },
+    sectionLabel: {
+        color: colors.textDisabled,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    aiGenerateBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,149,0,0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,149,0,0.3)',
+    },
+    aiGenerating: {
+        opacity: 0.5,
+    },
+    aiGenerateText: {
+        color: colors.primary,
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginLeft: 4,
+    },
+    chipContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     stickerOption: {
         marginRight: spacing.md,

@@ -16,6 +16,8 @@ interface DaySummaryModalProps {
     date: string;
     birthdays: Birthday[];
     onAddBirthday: () => void;
+    onEditBirthday: (birthday: Birthday) => void;
+    onGiftBirthday: (birthday: Birthday) => void;
     onDeleteSuccess: () => void;
 }
 
@@ -25,6 +27,8 @@ export const DaySummaryModal: React.FC<DaySummaryModalProps> = ({
     date,
     birthdays,
     onAddBirthday,
+    onEditBirthday,
+    onGiftBirthday,
     onDeleteSuccess,
 }) => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -55,9 +59,15 @@ export const DaySummaryModal: React.FC<DaySummaryModalProps> = ({
                                         uri={b.avatar_url ? supabase.storage.from('avatars').getPublicUrl(b.avatar_url).data.publicUrl : undefined}
                                     />
                                     <View style={styles.itemInfo}>
-                                        <Text style={styles.itemName}>{b.name}</Text>
-                                        <Text style={styles.itemRel}>{b.relationship}</Text>
+                                        <Text style={styles.itemName} numberOfLines={1}>{b.name}</Text>
+                                        <Text style={styles.itemRel} numberOfLines={1}>{b.relationship}</Text>
                                     </View>
+                                    <TouchableOpacity
+                                        onPress={() => onGiftBirthday(b)}
+                                        style={styles.actionBtn}
+                                    >
+                                        <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+                                    </TouchableOpacity>
                                     <TouchableOpacity
                                         onPress={() => {
                                             onClose();
@@ -66,6 +76,12 @@ export const DaySummaryModal: React.FC<DaySummaryModalProps> = ({
                                         style={styles.actionBtn}
                                     >
                                         <Ionicons name="share-social-outline" size={20} color={colors.primary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => onEditBirthday(b)}
+                                        style={styles.actionBtn}
+                                    >
+                                        <Ionicons name="pencil-outline" size={20} color={colors.info} />
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => handleDelete(b.id)} style={styles.actionBtn}>
                                         <Ionicons name="trash-outline" size={20} color={colors.error} />
@@ -121,13 +137,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surfaceHighlight,
-        padding: spacing.md,
+        padding: spacing.sm,
         borderRadius: borderRadius.lg,
         marginBottom: spacing.sm,
     },
     itemInfo: {
         flex: 1,
-        marginLeft: spacing.md,
+        marginLeft: spacing.sm,
+        justifyContent: 'center',
     },
     itemName: {
         color: colors.text,
@@ -139,8 +156,8 @@ const styles = StyleSheet.create({
         fontSize: typography.sizes.xs,
     },
     actionBtn: {
-        padding: spacing.sm,
-        marginLeft: spacing.xs,
+        padding: spacing.xs,
+        marginLeft: 2,
     },
     emptyText: {
         color: colors.textDisabled,

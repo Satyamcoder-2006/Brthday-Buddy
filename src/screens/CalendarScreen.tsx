@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase, isDemoMode } from '../services/supabase';
 import { AddBirthdayModal } from '../components/calendar/AddBirthdayModal';
 import { DaySummaryModal } from '../components/calendar/DaySummaryModal';
+import { GiftSuggestionsModal } from '../components/gifts/GiftSuggestionsModal';
 import { Loading } from '../components/common/Loading';
 import { colors, spacing, typography, borderRadius } from '../theme';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
@@ -17,9 +18,23 @@ export const CalendarScreen = () => {
     const [loading, setLoading] = useState(true);
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
+    const [birthdayToEdit, setBirthdayToEdit] = useState<any>(undefined);
+    const [giftModalVisible, setGiftModalVisible] = useState(false);
+    const [selectedBirthday, setSelectedBirthday] = useState<any>(null);
+
+    const handleGift = (birthday: any) => {
+        setSelectedBirthday(birthday);
+        setGiftModalVisible(true);
+    };
+
     const fetchBirthdays = async () => {
         try {
             if (isDemoMode) {
+                setBirthdays([
+                    { id: '1', name: 'John Doe', birthday_date: '1990-01-20', relationship: 'Friend', notes: 'Loves spicy food and hiking', user_id: 'demo' },
+                    { id: '2', name: 'Jane Smith', birthday_date: '1992-05-15', relationship: 'Family', notes: 'Enjoys reading and coffee', user_id: 'demo' },
+                    { id: '3', name: 'Bob Wilson', birthday_date: '1985-11-30', relationship: 'Colleague', notes: 'Tech enthusiast', user_id: 'demo' },
+                ]);
                 setLoading(false);
                 return;
             }
@@ -52,19 +67,12 @@ export const CalendarScreen = () => {
     };
 
     const onDayPress = (date: Date) => {
-        if (isDemoMode) {
-            Alert.alert(
-                'Demo Mode',
-                'Configure Supabase in app.json to save birthdays. Check README.md for setup instructions.',
-                [{ text: 'OK' }]
-            );
-            return;
-        }
         setSelectedDate(date);
         const dayBirthdays = getBirthdaysForDay(date);
         if (dayBirthdays.length > 0) {
             setSummaryVisible(true);
         } else {
+            setBirthdayToEdit(undefined);
             setModalVisible(true);
         }
     };
@@ -152,36 +160,49 @@ export const CalendarScreen = () => {
                 {renderCalendar()}
             </ScrollView>
 
-            {!isDemoMode && (
-                <>
-                    <TouchableOpacity
-                        style={styles.fab}
-                        onPress={() => setModalVisible(true)}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="add" size={32} color="white" />
-                    </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => {
+                    setBirthdayToEdit(undefined);
+                    setModalVisible(true);
+                }}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="add" size={32} color="white" />
+            </TouchableOpacity>
 
-                    <AddBirthdayModal
-                        visible={modalVisible}
-                        onClose={() => setModalVisible(false)}
-                        initialDate={format(selectedDate, 'yyyy-MM-dd')}
-                        onSuccess={fetchBirthdays}
-                    />
+            <AddBirthdayModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                initialDate={format(selectedDate, 'yyyy-MM-dd')}
+                onSuccess={fetchBirthdays}
+                birthdayToEdit={birthdayToEdit}
+            />
 
-                    <DaySummaryModal
-                        visible={summaryVisible}
-                        onClose={() => setSummaryVisible(false)}
-                        date={format(selectedDate, 'MMMM d')}
-                        birthdays={getBirthdaysForDay(selectedDate)}
-                        onAddBirthday={() => {
-                            setSummaryVisible(false);
-                            setModalVisible(true);
-                        }}
-                        onDeleteSuccess={fetchBirthdays}
-                    />
-                </>
-            )}
+            <DaySummaryModal
+                visible={summaryVisible}
+                onClose={() => setSummaryVisible(false)}
+                date={format(selectedDate, 'MMMM d')}
+                birthdays={getBirthdaysForDay(selectedDate)}
+                onAddBirthday={() => {
+                    setSummaryVisible(false);
+                    setBirthdayToEdit(undefined);
+                    setModalVisible(true);
+                }}
+                onEditBirthday={(birthday) => {
+                    setSummaryVisible(false);
+                    setBirthdayToEdit(birthday);
+                    setModalVisible(true);
+                }}
+                onGiftBirthday={handleGift}
+                onDeleteSuccess={fetchBirthdays}
+            />
+
+            <GiftSuggestionsModal
+                visible={giftModalVisible}
+                onClose={() => setGiftModalVisible(false)}
+                birthday={selectedBirthday}
+            />
         </View>
     );
 };

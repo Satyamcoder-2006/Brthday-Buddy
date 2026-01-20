@@ -16,13 +16,14 @@ interface AddBirthdayModalProps {
     onClose: () => void;
     initialDate?: string;
     onSuccess?: () => void;
+    birthdayToEdit?: any; // or Birthday type
 }
 
 const birthdaySchema = Yup.object({
     name: Yup.string().required('Name is required').max(50),
     relationship: Yup.string().required('Relationship is required'),
     turningAge: Yup.number().typeError('Must be a number').min(0, 'Min 0').max(120, 'Max 120'),
-    notes: Yup.string().max(200),
+    notes: Yup.string().max(200).nullable(),
 });
 
 const RELATIONSHIPS = ['Friend', 'Family', 'Colleague', 'Other'];
@@ -31,18 +32,24 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
     visible,
     onClose,
     initialDate,
-    onSuccess
+    onSuccess,
+    birthdayToEdit
 }) => {
     const [avatar, setAvatar] = useState<string | null>(null);
     const [date, setDate] = useState(initialDate || format(new Date(), 'yyyy-MM-dd'));
 
     useEffect(() => {
         if (visible) {
-            // Reset state when modal opens
-            setAvatar(null);
-            if (initialDate) setDate(initialDate);
+            if (birthdayToEdit) {
+                setDate(birthdayToEdit.birthday_date);
+                setAvatar(birthdayToEdit.avatar_url ? supabase.storage.from('avatars').getPublicUrl(birthdayToEdit.avatar_url).data.publicUrl : null);
+            } else {
+                setAvatar(null);
+                if (initialDate) setDate(initialDate);
+                else setDate(format(new Date(), 'yyyy-MM-dd'));
+            }
         }
-    }, [visible, initialDate]);
+    }, [visible, initialDate, birthdayToEdit]);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -62,50 +69,73 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
             const user = (await supabase.auth.getUser()).data.user;
             if (!user) throw new Error('Not authenticated');
 
-            let avatarUrl = null;
-            if (avatar) {
-                const fileName = `${user.id}/${Date.now()}.jpg`;
-                const formData = new FormData();
-                formData.append('file', {
-                    uri: avatar,
-                    name: 'photo.jpg',
-                    type: 'image/jpeg',
-                } as any);
+            let avatarUrl = birthdayToEdit?.avatar_url || null;
+            if (avatar && avatar !== (birthdayToEdit?.avatar_url ? supabase.storage.from('avatars').getPublicUrl(birthdayToEdit.avatar_url).data.publicUrl : null)) {
+                if (avatar.startsWith('http')) {
+                    // Already uploaded or public URL
+                } else {
+                    const fileName = `${user.id}/${Date.now()}.jpg`;
+                    const formData = new FormData();
+                    formData.append('file', {
+                        uri: avatar,
+                        name: 'photo.jpg',
+                        type: 'image/jpeg',
+                    } as any);
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('avatars')
-                    .upload(fileName, formData);
+                    const { error: uploadError } = await supabase.storage
+                        .from('avatars')
+                        .upload(fileName, formData);
 
-                if (uploadError) throw uploadError;
-                avatarUrl = fileName;
+                    if (uploadError) throw uploadError;
+                    avatarUrl = fileName;
+                }
             }
 
             // Calculate birth year based on turningAge
             let birthYear = null;
             if (values.turningAge) {
-                const currentYear = new Date().getFullYear();
-                birthYear = currentYear - parseInt(values.turningAge);
+                const bDate = new Date(date);
+                birthYear = bDate.getFullYear() - parseInt(values.turningAge);
+                // Adjust if birthday hasn't happened yet this year? 
+                // Actually "turning age" usually refers to the age they WILL be on their birthday in the CURRENT year.
+                // So birthYear = 2026 - 25 = 2001.
             }
 
-            const { data, error } = await supabase
-                .from('birthdays')
-                .insert({
-                    user_id: user.id,
-                    name: values.name,
-                    birthday_date: date,
-                    relationship: values.relationship,
-                    notes: values.notes,
-                    avatar_url: avatarUrl,
-                    birth_year: birthYear,
-                })
-                .select()
-                .single();
+            const payload = {
+                user_id: user.id,
+                name: values.name,
+                birthday_date: date,
+                relationship: values.relationship,
+                notes: values.notes,
+                avatar_url: avatarUrl,
+                birth_year: birthYear,
+            };
+
+            let data, error;
+            if (birthdayToEdit) {
+                const { data: updateData, error: updateError } = await supabase
+                    .from('birthdays')
+                    .update(payload)
+                    .eq('id', birthdayToEdit.id)
+                    .select()
+                    .single();
+                data = updateData;
+                error = updateError;
+            } else {
+                const { data: insertData, error: insertError } = await supabase
+                    .from('birthdays')
+                    .insert(payload)
+                    .select()
+                    .single();
+                data = insertData;
+                error = insertError;
+            }
 
             if (error) throw error;
 
             await scheduleBirthdayNotifications(data);
 
-            Alert.alert('Success', 'Birthday added!');
+            Alert.alert('Success', birthdayToEdit ? 'Birthday updated!' : 'Birthday added!');
             onSuccess?.();
             onClose();
         } catch (e: any) {
@@ -139,7 +169,14 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
                         </View>
 
                         <Formik
-                            initialValues={{ name: '', relationship: 'Friend', notes: '', turningAge: '' }}
+                            initialValues={{
+                                name: birthdayToEdit?.name || '',
+                                relationship: birthdayToEdit?.relationship || 'Friend',
+                                notes: birthdayToEdit?.notes || '',
+                                turningAge: birthdayToEdit?.birth_year
+                                    ? (new Date().getFullYear() - birthdayToEdit.birth_year).toString()
+                                    : ''
+                            }}
                             validationSchema={birthdaySchema}
                             onSubmit={handleSave}
                             enableReinitialize={true}
@@ -151,7 +188,7 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
                                         value={values.name}
                                         onChangeText={handleChange('name')}
                                         onBlur={handleBlur('name')}
-                                        error={touched.name ? errors.name : undefined}
+                                        error={touched.name && errors.name ? errors.name as string : undefined}
                                     />
 
                                     <Input
@@ -161,7 +198,7 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
                                         value={values.turningAge}
                                         onChangeText={handleChange('turningAge')}
                                         onBlur={handleBlur('turningAge')}
-                                        error={touched.turningAge ? errors.turningAge : undefined}
+                                        error={touched.turningAge && errors.turningAge ? errors.turningAge as string : undefined}
                                     />
 
                                     <View style={styles.relationshipSection}>

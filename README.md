@@ -66,7 +66,7 @@ Our flagship feature allows you to create professional-grade birthday cards on t
 - [ ] **Native Video Export**: High-quality MP4 generation directly on-device.
 - [ ] **Gift Registry Integration**: Link gift ideas directly to birthday entries.
 - [ ] **Group Celebrations**: Collaborate on card designs with friends.
-- [ ] **AI Message Generator**: Get personalized birthday wish suggestions based on your relationship.
+- [x] **AI Message Generator**: Get personalized birthday wish suggestions based on your relationship.
 - [ ] **Global Sync**: Automatically pull birthdays from contacts and social accounts.
 
 ---

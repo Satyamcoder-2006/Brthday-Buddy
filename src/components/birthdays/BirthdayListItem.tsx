@@ -12,9 +12,11 @@ interface Props {
     item: Birthday;
     onDelete: (id: string, name: string) => void;
     onEdit: (item: Birthday) => void;
+    onShare: (item: Birthday) => void;
+    onGift: (item: Birthday) => void;
 }
 
-export const BirthdayListItem: React.FC<Props> = ({ item, onDelete, onEdit }) => {
+export const BirthdayListItem: React.FC<Props> = ({ item, onDelete, onEdit, onShare, onGift }) => {
     const renderRightActions = (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
         return (
             <RectButton
@@ -70,7 +72,7 @@ export const BirthdayListItem: React.FC<Props> = ({ item, onDelete, onEdit }) =>
     };
 
     const info = calculateInfo();
-    const imageUrl = item.avatar_url
+    const imageUrl = item.avatar_url && supabase
         ? supabase.storage.from('avatars').getPublicUrl(item.avatar_url).data.publicUrl
         : undefined;
 
@@ -82,19 +84,14 @@ export const BirthdayListItem: React.FC<Props> = ({ item, onDelete, onEdit }) =>
                 <View style={styles.content}>
                     <View style={styles.header}>
                         <Text style={styles.name}>{item.name}</Text>
-                        <TouchableOpacity
-                            onPress={() => Alert.alert(
-                                'Delete Birthday?',
-                                `Are you sure you want to remove ${item.name}?`,
-                                [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id, item.name) }
-                                ]
-                            )}
-                            style={styles.deleteBtn}
-                        >
-                            <Ionicons name="trash-outline" size={20} color={colors.error} />
-                        </TouchableOpacity>
+                        <View style={styles.headerActions}>
+                            <TouchableOpacity
+                                onPress={() => onEdit(item)}
+                                style={styles.iconBtn}
+                            >
+                                <Ionicons name="pencil-outline" size={18} color={colors.textDisabled} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     <Text style={styles.date}>
@@ -104,10 +101,26 @@ export const BirthdayListItem: React.FC<Props> = ({ item, onDelete, onEdit }) =>
                         }
                     </Text>
 
-                    <Text style={styles.details}>
-                        {item.relationship} • 🎂 Turning {info.age}
-                    </Text>
+                    <View style={styles.footer}>
+                        <Text style={styles.details}>
+                            {item.relationship} • 🎂 Turning {info.age}
+                        </Text>
+                    </View>
                 </View>
+
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => onGift(item)}
+                >
+                    <Ionicons name="sparkles" size={24} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => onShare(item)}
+                >
+                    <Ionicons name="color-palette" size={24} color={colors.primary} />
+                </TouchableOpacity>
             </View>
         </Swipeable>
     );
@@ -130,7 +143,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 2,
+    },
+    headerActions: {
+        flexDirection: 'row',
+    },
+    iconBtn: {
+        padding: 4,
     },
     name: {
         color: colors.text,
@@ -140,15 +159,25 @@ const styles = StyleSheet.create({
     date: {
         color: colors.textDisabled,
         fontSize: typography.sizes.sm,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     today: {
         color: colors.primary,
         fontWeight: typography.weights.bold,
     },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     details: {
         color: colors.textDisabled,
         fontSize: typography.sizes.xs,
+    },
+    actionBtn: {
+        padding: spacing.sm,
+        marginLeft: 4,
+        backgroundColor: colors.surfaceHighlight,
+        borderRadius: 12,
     },
     editAction: {
         backgroundColor: colors.info,
@@ -163,8 +192,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: 80,
         height: '100%',
-    },
-    deleteBtn: {
-        padding: spacing.xs,
     },
 });

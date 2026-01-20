@@ -144,6 +144,23 @@ export const SettingsScreen = () => {
                     </View>
 
                     <View style={styles.section}>
+                        <View style={styles.row}>
+                            <View style={styles.rowLeft}>
+                                <Ionicons name="grid-outline" size={24} color={colors.primary} />
+                                <Text style={styles.rowText}>Home Screen Widget</Text>
+                            </View>
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>ACTIVE</Text>
+                            </View>
+                        </View>
+                        <View style={styles.subRow}>
+                            <Text style={styles.widgetHint}>
+                                Your next birthday is automatically synced to the widget.
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
                         <TouchableOpacity style={styles.row} onPress={() => Alert.alert('Demo Mode', 'Export feature requires Supabase configuration')}>
                             <Ionicons name="cloud-upload" size={24} color={colors.textDisabled} />
                             <Text style={styles.rowText}>Export Data</Text>
@@ -241,5 +258,21 @@ const styles = StyleSheet.create({
     subRowText: {
         color: colors.primary,
         fontWeight: typography.weights.medium,
+    },
+    badge: {
+        backgroundColor: colors.surfaceHighlight,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: colors.success,
+    },
+    widgetHint: {
+        color: colors.textSecondary,
+        fontSize: 12,
+        fontStyle: 'italic',
     },
 });
