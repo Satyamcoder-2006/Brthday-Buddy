@@ -2,7 +2,7 @@ import { captureRef } from 'react-native-view-shot';
 import { File, Paths, Directory } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Alert, Platform } from 'react-native';
-import Media3Transformer from '../../modules/media3check';
+import { getMedia3Transformer } from '../../modules/media3check/src/Media3TransformerModule';
 
 export const VideoExportService = {
     /**
@@ -75,7 +75,12 @@ export const VideoExportService = {
             try {
                 // Determine output URI (must be absolute file path usually, or file://)
                 // The native module handles file:// stripping
-                const outputUri = await Media3Transformer.composeVideo(
+                const media3 = getMedia3Transformer();
+                if (!media3) {
+                    throw new Error('Video export module is not ready. Please restart the app.');
+                }
+
+                const outputUri = await media3.composeVideo(
                     framePaths,
                     outputVideoFile.uri,
                     frameDurationMs
