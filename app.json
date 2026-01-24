@@ -42,18 +42,20 @@
         "WRITE_CALENDAR",
         "CAMERA",
         "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO"
+        "READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
       ]
     },
     "plugins": [
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#FF9500",
-          "sounds": [
-            "./assets/notification-sound.wav"
-          ]
+          "color": "#FF9500"
         }
       ],
       [
@@ -63,13 +65,23 @@
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
           "isImageOnly": true
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
       ]
     ],
     "extra": {
       "supabaseUrl": "REPLACE_WITH_SUPABASE_URL",
       "supabaseAnonKey": "REPLACE_WITH_SUPABASE_ANON_KEY",
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "92e43b74-800b-4cf6-b2ff-85521bc050a7"
       }
     }
   }

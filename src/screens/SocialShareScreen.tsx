@@ -13,6 +13,7 @@ import { CustomizationPanel } from '../components/sharing/CustomizationPanel';
 import { CardState } from '../components/sharing/types';
 import { CardExportService } from '../services/CardExportService';
 import { AnimatedExportService } from '../services/AnimatedExportService';
+import { VideoExportService } from '../services/VideoExportService';
 
 type SocialShareScreenRouteProp = RouteProp<RootStackParamList, 'SocialShare'>;
 
@@ -23,6 +24,8 @@ export const SocialShareScreen = () => {
 
     const viewShotRef = useRef<ViewShot>(null);
     const [capturing, setCapturing] = useState(false);
+    const [exportingVideo, setExportingVideo] = useState(false);
+    const [videoProgress, setVideoProgress] = useState(0);
     const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
     // Helper to get full URL
@@ -111,7 +114,7 @@ export const SocialShareScreen = () => {
     };
 
     const handleAnimatedShare = async () => {
-        if (capturing) return;
+        if (capturing || exportingVideo) return;
         setCapturing(true);
 
         try {
@@ -121,6 +124,30 @@ export const SocialShareScreen = () => {
             Alert.alert('Error', 'Animation export failed. Please try again.');
         } finally {
             setCapturing(false);
+        }
+    };
+
+    const handleVideoExport = async () => {
+        if (capturing || exportingVideo) return;
+        setExportingVideo(true);
+        setVideoProgress(0);
+
+        try {
+            const videoUri = await VideoExportService.exportAsVideo(
+                viewShotRef,
+                birthday.name,
+                (progress) => setVideoProgress(progress)
+            );
+
+            if (videoUri) {
+                await VideoExportService.shareVideo(videoUri, birthday.name);
+            }
+        } catch (error: any) {
+            console.error('Video export failed', error);
+            Alert.alert('Error', 'Video export failed. Please try again.');
+        } finally {
+            setExportingVideo(false);
+            setVideoProgress(0);
         }
     };
 
@@ -184,11 +211,22 @@ export const SocialShareScreen = () => {
 
                     <TouchableOpacity
                         style={[styles.premiumAction, { backgroundColor: colors.primary }]}
+                        onPress={handleVideoExport}
+                        disabled={capturing || exportingVideo}
+                    >
+                        <Ionicons name="videocam-outline" size={18} color="white" />
+                        <Text style={styles.premiumActionText}>
+                            {exportingVideo ? `${videoProgress}%` : 'Video'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.premiumAction, { backgroundColor: '#5856D6' }]}
                         onPress={handleAnimatedShare}
-                        disabled={capturing}
+                        disabled={capturing || exportingVideo}
                     >
                         <Ionicons name="sparkles-outline" size={18} color="white" />
-                        <Text style={styles.premiumActionText}>Animation</Text>
+                        <Text style={styles.premiumActionText}>HTML</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

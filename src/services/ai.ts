@@ -10,6 +10,35 @@ export interface GiftSuggestion {
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
+/**
+ * Attempts to repair truncated JSON by closing open brackets and braces.
+ */
+const fixTruncatedJson = (jsonString: string): string => {
+    let text = jsonString.trim();
+
+    // Check if it looks like an array and is truncated
+    if (text.startsWith('[') && !text.endsWith(']')) {
+        // Find the last completed object if any
+        const lastBrace = text.lastIndexOf('}');
+        if (lastBrace !== -1) {
+            // Cut to the last complete object and close the array
+            return text.substring(0, lastBrace + 1) + ']';
+        }
+
+        // If it's a list of strings (card messages)
+        const lastQuote = text.lastIndexOf('"');
+        if (lastQuote !== -1 && text.lastIndexOf(',') < lastQuote) {
+            // Probably inside a string, close the string and array
+            return text.substring(0, lastQuote + 1) + ']';
+        }
+
+        // Emergency fallback - just try to close it
+        return text + (text.includes('{') ? '}]' : ']');
+    }
+
+    return text;
+};
+
 export const getGiftSuggestions = async (
     birthday: Birthday,
     budget: string,
@@ -53,8 +82,8 @@ export const getCardMessageSuggestions = async (
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 512,  // Increased for 6 messages with emojis
-                    responseMimeType: "application/json"
+                    max_output_tokens: 512,
+                    response_mime_type: "application/json"
                 }
             })
         });
@@ -63,12 +92,14 @@ export const getCardMessageSuggestions = async (
         const result = await response.json();
         const text = result.candidates[0].content.parts[0].text;
 
-        // Extract JSON from markdown code blocks or plain text
-        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/\[[\s\S]*\]/);
-        const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : text;
+        // Extract and repair JSON
+        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/\[[\s\S]*\]/) || [text];
+        const rawJsonText = jsonMatch[1] || jsonMatch[0];
+        const fixedJson = fixTruncatedJson(rawJsonText);
 
-        return JSON.parse(jsonText.trim());
+        return JSON.parse(fixedJson.trim());
     } catch (error) {
+        console.error('Message AI Error:', error);
         return ['Happy Birthday! 🎂', 'Best Year Yet! ✨', 'HBD! 🎈', 'Cheers! 🥂', 'Legend! 👑', 'Make a Wish! 🌟'];
     }
 };
@@ -92,10 +123,10 @@ const callGeminiAPI = async (birthday: Birthday, budget: string): Promise<GiftSu
         3. Each object must have:
            - "id" (string, e.g., "1")
            - "title" (short product/experience name)
-           - "description" (1-2 sentences about the gift)
+           - "description" (max 20 words)
            - "why" (Short reasoning why this fits their profile)
         
-        CRITICAL: Return ONLY the raw JSON array. DO NOT include markdown formatting or extra text.
+        CRITICAL: Return ONLY the raw JSON array.
     `;
 
     const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
@@ -109,10 +140,10 @@ const callGeminiAPI = async (birthday: Birthday, budget: string): Promise<GiftSu
             }],
             generationConfig: {
                 temperature: 0.7,
-                topP: 0.8,
-                topK: 40,
-                maxOutputTokens: 2048,  // Increased for detailed gift descriptions
-                responseMimeType: "application/json"
+                top_p: 0.8,
+                top_k: 40,
+                max_output_tokens: 4096,
+                response_mime_type: "application/json"
             }
         })
     });
@@ -125,12 +156,12 @@ const callGeminiAPI = async (birthday: Birthday, budget: string): Promise<GiftSu
     const text = result.candidates[0].content.parts[0].text;
 
     try {
-        // Extract JSON from markdown code blocks or plain text
-        // Use [\s\S]*? for non-greedy matching to handle multiline JSON
-        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/\[[\s\S]*\]/);
-        const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : text;
+        // Extract and repair JSON
+        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || text.match(/\[[\s\S]*\]/) || [text];
+        const rawJsonText = jsonMatch[1] || jsonMatch[0];
+        const fixedJson = fixTruncatedJson(rawJsonText);
 
-        const parsed = JSON.parse(jsonText.trim());
+        const parsed = JSON.parse(fixedJson.trim());
         return Array.isArray(parsed) ? parsed : getMockSuggestions(birthday, budget);
     } catch (e) {
         console.error('Failed to parse Gemini response:', text);
