@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Birthday } from '../types';
 
 export interface GiftSuggestion {
@@ -7,7 +8,7 @@ export interface GiftSuggestion {
     why: string;
 }
 
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || Constants.expoConfig?.extra?.geminiApiKey;
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 /**
