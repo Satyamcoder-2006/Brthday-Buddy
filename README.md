@@ -22,14 +22,14 @@
 
 - [Overview](#overview)
 - [Features](#-features)
-- [Architecture](#-architecture)
+- [Architecture](#%EF%B8%8F-architecture)
 - [Technical Deep Dive](#-technical-deep-dive)
 - [Installation & Setup](#-installation--setup)
 - [Development Challenges](#-development-challenges-solved)
 - [Performance Optimizations](#-performance-optimizations)
 - [Security & Privacy](#-security--privacy)
 - [Testing Strategy](#-testing-strategy)
-- [Roadmap](#-roadmap)
+- [Roadmap](#%EF%B8%8F-roadmap)
 - [Contributing](#-contributing)
 
 ---
@@ -52,6 +52,12 @@ This application represents **300+ hours of development**, solving challenges th
 ## 🚀 Features
 
 ### 📅 Intelligent Birthday Management
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/9b35b9e5-c473-4808-b708-f267363b9a71"height="600" width="30%" />
+  <img src="https://github.com/user-attachments/assets/d8324a76-028a-44d7-ba0b-5e8967da658e" height="600" width="30%" />
+</div>
+<br />
 
 **Challenge**: Building a performant list that handles 1000+ contacts while maintaining 60fps scrolling.
 
@@ -76,6 +82,13 @@ const sortedBirthdays = useMemo(() => {
 ```
 
 ### 🤖 AI Gift Recommendation Engine
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/5707a19e-f744-4c0f-866f-d2552a7e3e34" height="600" width="30%" />
+</div>
+
+<br />
+
 
 **Challenge**: Integrating Google's Gemini Pro API while handling rate limits, context management, and streaming responses.
 
@@ -110,6 +123,12 @@ const streamGiftSuggestions = async (context: PersonContext) => {
 ```
 
 ### 🏠 Native Android Widgets
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/dbefda45-860d-401d-9f44-879902c86013" width="28%" />
+</div>
+
+<br />
 
 **Challenge**: Rendering React Native components as Android home screen widgets—a capability that doesn't exist out of the box.
 
@@ -155,6 +174,13 @@ const streamGiftSuggestions = async (context: PersonContext) => {
 - `app.config.ts` - Widget provider configuration (180dp × 110dp)
 
 ### 🎨 Dynamic Card Generation & Sharing
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/5e2dae29-1328-4707-9426-8fdf7bd617b8" height="600" width="30%" />
+</div>
+
+<br />
+
 
 **Challenge**: Generating shareable birthday cards with custom fonts, gradients, and effects that work across platforms.
 
@@ -204,6 +230,13 @@ React Native → Skia Canvas → Frame Buffer → Native Module → FFmpeg → M
 
 ### 🔔 Advanced Notification System
 
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/ebd9c19d-137c-471f-a882-817ea1e278d3" width="30%" />
+</div>
+
+<br />
+
+
 **Challenge**: Reliable notification delivery across Android versions with varying power-saving restrictions.
 
 **Implementation**:
@@ -220,6 +253,13 @@ React Native → Skia Canvas → Frame Buffer → Native Module → FFmpeg → M
 - Set advance notice period (1 day, 1 week, etc.)
 
 ### 🔐 Authentication & Data Persistence
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/677b38ec-ce55-412a-9a7f-78ea1f90e9c8" height="600" width="30%" />
+</div>
+
+<br />
+
 
 **Challenge**: Building a secure, scalable backend without a dedicated server team.
 
