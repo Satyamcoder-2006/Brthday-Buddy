@@ -8,6 +8,8 @@ import { FloralDreamCard } from './layouts/FloralDreamCard';
 import { GeometricModernCard } from './layouts/GeometricModernCard';
 import { BalloonPartyCard } from './layouts/BalloonPartyCard';
 import { StarryNightCard } from './layouts/StarryNightCard';
+import { GlassmorphismCard } from './layouts/GlassmorphismCard';
+import { GlitchCyberCard } from './layouts/GlitchCyberCard';
 import { CardState, BirthdayInfo, CardElement } from './types';
 import { DraggableElement } from './DraggableElement';
 
@@ -49,6 +51,10 @@ export const CardCanvas = ({
                 return <BalloonPartyCard birthday={birthday} state={state} />;
             case 'starry_night':
                 return <StarryNightCard birthday={birthday} state={state} />;
+            case 'glassmorphism':
+                return <GlassmorphismCard birthday={birthday} state={state} />;
+            case 'glitch_cyber':
+                return <GlitchCyberCard birthday={birthday} state={state} />;
             default:
                 // Fallback to minimal if layout not found
                 return <MinimalEleganceCard birthday={birthday} state={state} />;

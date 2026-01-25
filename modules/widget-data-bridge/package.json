@@ -1,0 +1,13 @@
+{
+    "name": "widget-data-bridge",
+    "version": "1.0.0",
+    "description": "Bridge for Sharing Data with Android Widgets via SharedPreferences",
+    "main": "index.ts",
+    "keywords": [
+        "react-native",
+        "expo",
+        "widget",
+        "sharedpreferences"
+    ],
+    "author": "Antigravity"
+}

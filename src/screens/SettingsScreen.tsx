@@ -8,11 +8,19 @@ import * as Notifications from 'expo-notifications';
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, borderRadius, typography } from '../theme';
+import { DataExportService } from '../services/DataExportService';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { SettingsService } from '../services/SettingsService';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const SettingsScreen = () => {
+    const insets = useSafeAreaInsets();
     const [profile, setProfile] = useState<any>({ name: 'Demo User', email: 'demo@example.com' });
     const [loading, setLoading] = useState(true);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [notificationTime, setNotificationTime] = useState(new Date());
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -22,11 +30,15 @@ export const SettingsScreen = () => {
     const loadSettings = async () => {
         try {
             const storedValue = await AsyncStorage.getItem('notificationsEnabled');
-            // CRITICAL: Type safe conversion
             const isEnabled = storedValue !== 'false';
             setNotificationsEnabled(isEnabled);
 
-            // Update system permissions if needed
+            // Load Time
+            const time = await SettingsService.getNotificationTime();
+            const date = new Date();
+            date.setHours(time.hour, time.minute, 0, 0);
+            setNotificationTime(date);
+
             if (isEnabled) {
                 const { status } = await Notifications.getPermissionsAsync();
                 if (status !== 'granted') setNotificationsEnabled(false);
@@ -108,8 +120,62 @@ export const SettingsScreen = () => {
         });
     };
 
+    const onTimeChange = async (event: any, selectedDate?: Date) => {
+        const currentDate = selectedDate || notificationTime;
+        setShowTimePicker(false);
+        setNotificationTime(currentDate);
+
+        if (selectedDate) {
+            await SettingsService.setNotificationTime(
+                currentDate.getHours(),
+                currentDate.getMinutes()
+            );
+        }
+    };
+
+    const handleExportData = async () => {
+        try {
+            if (isDemoMode) {
+                // Mock data for demo export
+                const mockBirthdays = [
+                    { name: 'John Doe', birthday_date: '1990-01-01', relationship: 'Friend', notes: 'Likes golf' },
+                    { name: 'Jane Smith', birthday_date: '1995-05-15', relationship: 'Sister', notes: 'Loves cats' }
+                ];
+                await DataExportService.exportToCSV(mockBirthdays as any);
+                return;
+            }
+
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                Alert.alert('Error', 'You must be logged in to export data');
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('birthdays')
+                .select('*')
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                Alert.alert('No Data', 'You have no birthdays to export.');
+                return;
+            }
+
+            await DataExportService.exportToCSV(data);
+
+        } catch (error: any) {
+            Alert.alert('Export Failed', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
             <Text style={styles.title}>Settings</Text>
 
             <ScrollView>
@@ -138,10 +204,33 @@ export const SettingsScreen = () => {
                                 ios_backgroundColor={colors.borderLight}
                             />
                         </View>
+
+                        {notificationsEnabled && (
+                            <TouchableOpacity style={styles.row} onPress={() => setShowTimePicker(true)}>
+                                <View style={styles.rowLeft}>
+                                    <Ionicons name="time-outline" size={24} color={colors.textSecondary} />
+                                    <Text style={styles.rowText}>Reminder Time</Text>
+                                </View>
+                                <Text style={styles.valueText}>
+                                    {notificationTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} style={styles.chevron} />
+                            </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity style={styles.subRow} onPress={testNotification}>
                             <Text style={styles.subRowText}>Send Test Notification</Text>
                         </TouchableOpacity>
                     </View>
+
+                    {showTimePicker && (
+                        <DateTimePicker
+                            value={notificationTime}
+                            mode="time"
+                            display="spinner"
+                            onChange={onTimeChange}
+                        />
+                    )}
 
                     <View style={styles.section}>
                         <View style={styles.row}>
@@ -161,9 +250,9 @@ export const SettingsScreen = () => {
                     </View>
 
                     <View style={styles.section}>
-                        <TouchableOpacity style={styles.row} onPress={() => Alert.alert('Demo Mode', 'Export feature requires Supabase configuration')}>
+                        <TouchableOpacity style={styles.row} onPress={handleExportData}>
                             <Ionicons name="cloud-upload" size={24} color={colors.textDisabled} />
-                            <Text style={styles.rowText}>Export Data</Text>
+                            <Text style={styles.rowText}>Export Data (CSV)</Text>
                             <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} style={styles.chevron} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.rowLast} onPress={handleLogout}>
@@ -274,5 +363,11 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         fontSize: 12,
         fontStyle: 'italic',
+    },
+    valueText: {
+        color: colors.primary,
+        fontSize: typography.sizes.lg,
+        fontWeight: typography.weights.medium,
+        marginRight: spacing.sm,
     },
 });

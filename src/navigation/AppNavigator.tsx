@@ -20,7 +20,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 const DemoBanner = () => (
     <View style={styles.demoBanner}>
         <Ionicons name="warning" size={16} color={colors.primary} />
-        <Text style={styles.demoText}>DEMO MODE - Configure Supabase in app.json</Text>
+        <Text style={styles.demoText}>DEMO MODE - Configure Supabase in </Text>
     </View>
 );
 

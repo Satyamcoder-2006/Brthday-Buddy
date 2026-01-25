@@ -9,7 +9,13 @@ export interface GiftSuggestion {
 }
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || Constants.expoConfig?.extra?.geminiApiKey;
-const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+const MODELS_TO_TRY = [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-flash-latest" // Ultimate fallback
+];
 
 /**
  * Attempts to repair truncated JSON by closing open brackets and braces.
@@ -40,6 +46,47 @@ const fixTruncatedJson = (jsonString: string): string => {
     return text;
 };
 
+/**
+ * Helper to call Gemini with fallback support
+ */
+const generateContentWithFallback = async (
+    payload: any,
+    context: string // 'Gift Suggestions' or 'Card Messages'
+): Promise<any> => {
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            const endpoint = `${BASE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            console.log(`🤖 formatRequest: Outputting request to ${model}...`);
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                // If 404 (Not Found) or 403 (Forbidden), we try the next model.
+                // If 500/503 (Server Error), we might also want to retry, so we treat generally.
+                console.warn(`⚠️ ${context}: Model ${model} failed (${response.status}).`, errorText);
+                lastError = new Error(`Model ${model} error: ${response.status} ${errorText}`);
+                continue; // Try next model
+            }
+
+            const result = await response.json();
+            console.log(`✅ ${context}: Success with ${model}`);
+            return result;
+        } catch (e) {
+            console.warn(`⚠️ ${context}: Network/Logic error with ${model}`, e);
+            lastError = e;
+        }
+    }
+
+    throw lastError || new Error('All models failed');
+};
+
 export const getGiftSuggestions = async (
     birthday: Birthday,
     budget: string,
@@ -55,7 +102,7 @@ export const getGiftSuggestions = async (
     try {
         return await callGeminiAPI(birthday, budget);
     } catch (error) {
-        console.error('Gemini API Error:', error);
+        console.error('Gemini API Error (All Models Failed):', error);
         // Graceful fallback to mock data on API error
         return getMockSuggestions(birthday, budget);
     }
@@ -76,21 +123,16 @@ export const getCardMessageSuggestions = async (
             Include emojis. Return ONLY a JSON array of strings.
         `;
 
-        const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    max_output_tokens: 512,
-                    response_mime_type: "application/json"
-                }
-            })
-        });
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.7,
+                max_output_tokens: 512,
+                response_mime_type: "application/json"
+            }
+        };
 
-        if (!response.ok) throw new Error('API Error');
-        const result = await response.json();
+        const result = await generateContentWithFallback(payload, 'Card Messages');
         const text = result.candidates[0].content.parts[0].text;
 
         // Extract and repair JSON
@@ -130,30 +172,20 @@ const callGeminiAPI = async (birthday: Birthday, budget: string): Promise<GiftSu
         CRITICAL: Return ONLY the raw JSON array.
     `;
 
-    const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            contents: [{
-                parts: [{ text: prompt }]
-            }],
-            generationConfig: {
-                temperature: 0.7,
-                top_p: 0.8,
-                top_k: 40,
-                max_output_tokens: 4096,
-                response_mime_type: "application/json"
-            }
-        })
-    });
+    const payload = {
+        contents: [{
+            parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+            temperature: 0.7,
+            top_p: 0.8,
+            top_k: 40,
+            max_output_tokens: 4096,
+            response_mime_type: "application/json"
+        }
+    };
 
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = await generateContentWithFallback(payload, 'Gift Suggestions');
     const text = result.candidates[0].content.parts[0].text;
 
     try {

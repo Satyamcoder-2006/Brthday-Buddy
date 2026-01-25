@@ -9,8 +9,11 @@ import { GiftSuggestionsModal } from '../components/gifts/GiftSuggestionsModal';
 import { Loading } from '../components/common/Loading';
 import { colors, spacing, typography, borderRadius } from '../theme';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { updateWidgetData } from '../services/widget';
 
 export const CalendarScreen = () => {
+    const insets = useSafeAreaInsets();
     const [birthdays, setBirthdays] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [modalVisible, setModalVisible] = useState(false);
@@ -30,18 +33,22 @@ export const CalendarScreen = () => {
     const fetchBirthdays = async () => {
         try {
             if (isDemoMode) {
-                setBirthdays([
+                const mockBirthdays = [
                     { id: '1', name: 'John Doe', birthday_date: '1990-01-20', relationship: 'Friend', notes: 'Loves spicy food and hiking', user_id: 'demo' },
                     { id: '2', name: 'Jane Smith', birthday_date: '1992-05-15', relationship: 'Family', notes: 'Enjoys reading and coffee', user_id: 'demo' },
                     { id: '3', name: 'Bob Wilson', birthday_date: '1985-11-30', relationship: 'Colleague', notes: 'Tech enthusiast', user_id: 'demo' },
-                ]);
+                ];
+                setBirthdays(mockBirthdays);
+                updateWidgetData(mockBirthdays);
                 setLoading(false);
                 return;
             }
 
             const { data, error } = await supabase.from('birthdays').select('*');
             if (error) throw error;
-            setBirthdays(data || []);
+            const list = data || [];
+            setBirthdays(list);
+            updateWidgetData(list);
         } catch (e: any) {
             console.log('Error fetching birthdays', e.message);
         } finally {
@@ -155,7 +162,7 @@ export const CalendarScreen = () => {
     if (loading && birthdays.length === 0 && !isDemoMode) return <Loading />;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {renderCalendar()}
             </ScrollView>
@@ -206,9 +213,6 @@ export const CalendarScreen = () => {
         </View>
     );
 };
-
-const { width } = Dimensions.get('window');
-// contentWidth and cellSize removed - using percentage widths instead
 
 const styles = StyleSheet.create({
     container: {

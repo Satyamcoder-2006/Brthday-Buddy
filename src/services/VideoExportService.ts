@@ -77,7 +77,7 @@ export const VideoExportService = {
                 // The native module handles file:// stripping
                 const media3 = getMedia3Transformer();
                 if (!media3) {
-                    throw new Error('Video export module is not ready. Please restart the app.');
+                    throw new Error('Video export requires a Development Build. This feature is not available in Expo Go.');
                 }
 
                 const outputUri = await media3.composeVideo(

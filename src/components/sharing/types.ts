@@ -1,5 +1,5 @@
 
-export type LayoutId = 'minimal_elegance' | 'gradient_waves' | 'confetti_burst' | 'retro_neon' | 'floral_dream' | 'geometric_modern' | 'balloon_party' | 'starry_night';
+export type LayoutId = 'minimal_elegance' | 'gradient_waves' | 'confetti_burst' | 'retro_neon' | 'floral_dream' | 'geometric_modern' | 'balloon_party' | 'starry_night' | 'glassmorphism' | 'glitch_cyber';
 
 export type ColorTheme = 'sunset' | 'ocean' | 'forest' | 'rose' | 'midnight' | 'candy' | 'lavender' | 'cosmic';
 

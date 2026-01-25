@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform, Alert, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 import { Birthday } from '../types';
 
@@ -44,6 +45,9 @@ export async function registerForPushNotificationsAsync() {
     return true;
 }
 
+
+// ... (existing imports)
+
 export async function scheduleBirthdayNotifications(birthday: Birthday) {
     const notificationIds: string[] = [];
 
@@ -56,6 +60,20 @@ export async function scheduleBirthdayNotifications(birthday: Birthday) {
         );
     }
 
+    // Get Data
+    let preferredHour = 9;
+    let preferredMinute = 0;
+    try {
+        const storedTime = await AsyncStorage.getItem('notification_time');
+        if (storedTime) {
+            const { hour, minute } = JSON.parse(storedTime);
+            preferredHour = hour;
+            preferredMinute = minute;
+        }
+    } catch (e) {
+        console.warn('Could not load notification time preference', e);
+    }
+
     const now = new Date();
     const bDate = new Date(birthday.birthday_date);
 
@@ -63,25 +81,21 @@ export async function scheduleBirthdayNotifications(birthday: Birthday) {
     const birthdayThisYear = new Date(
         now.getFullYear(),
         bDate.getMonth(),
-        bDate.getDate() // This might need handling for GMT vs Local, generally assumes local date string 'YYYY-MM-DD'
+        bDate.getDate()
     );
-    // Fix time to start of day
     birthdayThisYear.setHours(0, 0, 0, 0);
-
-
-    // If birthday passed this year (including today?), schedule for next year
-    // If Today, we might want to alert if it's not too late. 
-    // Simplified logic: strict > now. 
 
     let targetBirthday = new Date(birthdayThisYear);
     if (targetBirthday < now) {
         targetBirthday.setFullYear(now.getFullYear() + 1);
     }
 
-    // 1 DAY PRIOR NOTIFICATION (9 AM)
+    // 1 DAY PRIOR NOTIFICATION
+    // We stick to the user's preferred time for the prior day too, or maybe keep it 9AM? 
+    // Spec didn't start. Let's use preferred time for consistency.
     const oneDayPrior = new Date(targetBirthday);
     oneDayPrior.setDate(oneDayPrior.getDate() - 1);
-    oneDayPrior.setHours(9, 0, 0, 0);
+    oneDayPrior.setHours(preferredHour, preferredMinute, 0, 0);
 
     if (oneDayPrior > now) {
         const id = await Notifications.scheduleNotificationAsync({
@@ -102,23 +116,9 @@ export async function scheduleBirthdayNotifications(birthday: Birthday) {
         notificationIds.push(id);
     }
 
-    // 1 HOUR PRIOR NOTIFICATION (on the day, e.g. 10 AM? Or 00:00 - 1h = 11PM prev day? 
-    // Spec says: "1 hour prior toggle". Usually implies "On the day at specific time" or "Just before start". 
-    // Actually spec says: 
-    // "1 HOUR PRIOR NOTIFICATION ... oneHourPrior.setHours(oneHourPrior.getHours() - 1);"
-    // If targetBirthday is 00:00, this is 11PM day before. 
-    // A better default for "Birthday" is notification at 9AM on the day. 
-    // But let's follow spec logic or improve.
-    // "oneHourPrior" usually means 1 hour before the *event*. If event is all day, when is the event?
-    // Let's assume the user wants a notification ON the day. 
-    // I will schedule one for 10:00 AM on the day of birthday. 
-    // Wait, the spec code snippet:
-    // const oneHourPrior = new Date(targetBirthday); oneHourPrior.setHours(oneHourPrior.getHours() - 1);
-    // If targetBirthday is 00:00, this is 23:00 previous day. That's weird.
-    // I'll adjust: Notify at 9 AM on the day.
-
+    // ON THE DAY NOTIFICATION
     const onTheDay = new Date(targetBirthday);
-    onTheDay.setHours(9, 0, 0, 0); // 9 AM
+    onTheDay.setHours(preferredHour, preferredMinute, 0, 0);
 
     if (onTheDay > now) {
         const id = await Notifications.scheduleNotificationAsync({

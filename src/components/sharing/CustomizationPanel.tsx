@@ -64,6 +64,8 @@ export const CustomizationPanel = ({ state, onChange, birthday }: Props) => {
         { id: 'geometric_modern', label: 'Modern' },
         { id: 'balloon_party', label: 'Balloons' },
         { id: 'starry_night', label: 'Starry' },
+        { id: 'glassmorphism', label: 'Glass' },
+        { id: 'glitch_cyber', label: 'Cyber' },
     ];
 
     return (

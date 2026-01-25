@@ -1,27 +1,26 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, FlatList } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase, isDemoMode } from '../services/supabase';
 import { BirthdayListItem } from '../components/birthdays/BirthdayListItem';
 import { Loading } from '../components/common/Loading';
 import { EmptyState } from '../components/common/EmptyState';
-import { Birthday } from '../types';
+import { Birthday, RootStackParamList } from '../types';
 import { addYears, differenceInDays } from 'date-fns';
 import { colors, spacing, borderRadius, typography } from '../theme';
-
-const FILTERS = ['All', 'This Week', 'This Month'];
-
 import { NextBirthdayCard } from '../components/birthdays/NextBirthdayCard';
 import { AddBirthdayModal } from '../components/calendar/AddBirthdayModal';
 import { GiftSuggestionsModal } from '../components/gifts/GiftSuggestionsModal';
 import { updateWidgetData } from '../services/widget';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types';
+
+const FILTERS = ['All', 'This Week', 'This Month'];
 
 export const BirthdaysListScreen = () => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+    const insets = useSafeAreaInsets();
     const [birthdays, setBirthdays] = useState<Birthday[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -143,7 +142,7 @@ export const BirthdaysListScreen = () => {
     if (loading && birthdays.length === 0 && !isDemoMode) return <Loading />;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
             <View style={styles.header}>
                 <Text style={styles.title}>Birthdays</Text>
 
@@ -245,7 +244,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
-        paddingTop: spacing.xxl,
     },
     header: {
         paddingHorizontal: spacing.md,
