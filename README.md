@@ -12,7 +12,7 @@
 
 *Never forget a special moment again.*
 
-[Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Technical Deep Dive](#-technical-deep-dive) • [Roadmap](#-roadmap)
+[Features](#-features) • [Architecture](#%EF%B8%8F-architecture) • [Installation](#-installation--setup) • [Technical Deep Dive](#-technical-deep-dive) • [Roadmap](#%EF%B8%8F-roadmap)
 
 </div>
 
