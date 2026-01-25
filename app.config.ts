@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     ios: {
         supportsTablet: true,
-        bundleIdentifier: "com.yourcompany.birthdaybuddy",
+        bundleIdentifier: "com.satyam.birthdaybuddy",
         infoPlist: {
             "NSCalendarsUsageDescription": "This app needs access to your calendar to mark birthdays.",
             "NSRemindersUsageDescription": "This app needs access to reminders for birthday notifications.",
