@@ -85,9 +85,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 "widgets": [
                     {
                         "name": "BirthdayWidget",
-                        "label": "Next Birthday",
-                        "minWidth": "3x2",
-                        "minHeight": "2x1",
+                        "minWidth": "180dp",
+                        "minHeight": "110dp",
                         "description": "Shows the next upcoming birthday",
                         "previewImage": "./assets/widget-preview.png",
                         "targetCellWidth": 3,
