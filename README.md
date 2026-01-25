@@ -1122,10 +1122,8 @@ Thank you to our 50+ beta testers who provided invaluable feedback!
 
 ## 📞 Contact & Support
 
-- **Email**: support@birthdaybuddy.app
-- **GitHub Issues**: [Report a bug](https://github.com/yourusername/birthday-buddy/issues)
-- **Twitter**: [@BirthdayBuddyApp](https://twitter.com/birthdaybuddyapp)
-- **Discord**: [Join our community](https://discord.gg/birthdaybuddy)
+- **Email**: satyam.satyarthi2006@gmail.com
+- **GitHub Issues**: [Report a bug](https://github.com/Satyamcoder-2006/birthday-buddy/issues)
 
 ---
 
@@ -1150,6 +1148,6 @@ If you're a user, I hope Birthday Buddy helps you **celebrate the people who mat
 
 **Made with ❤️ and countless cups of ☕**
 
-[⭐ Star this repo](https://github.com/yourusername/birthday-buddy) • [🐛 Report bug](https://github.com/yourusername/birthday-buddy/issues) • [💡 Request feature](https://github.com/yourusername/birthday-buddy/issues)
+[⭐ Star this repo](https://github.com/Satyamcoder-2006/birthday-buddy) • [🐛 Report bug](https://github.com/Satyamcoder-2006/birthday-buddy/issues) • [💡 Request feature](https://github.com/Satyamcoder-2006/birthday-buddy/issues)
 
 </div>
