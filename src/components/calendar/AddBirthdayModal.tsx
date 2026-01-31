@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView, Alert, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -17,13 +18,14 @@ interface AddBirthdayModalProps {
     initialDate?: string;
     onSuccess?: () => void;
     birthdayToEdit?: any; // or Birthday type
+    extractedData?: { name?: string; date?: string; notes?: string };
 }
 
 const birthdaySchema = Yup.object({
     name: Yup.string().required('Name is required').max(50),
     relationship: Yup.string().required('Relationship is required'),
-    turningAge: Yup.number().typeError('Must be a number').min(0, 'Min 0').max(120, 'Max 120'),
     notes: Yup.string().max(200).nullable(),
+    birthYear: Yup.string().nullable(), // 'unknown' or a year string
 });
 
 const RELATIONSHIPS = ['Friend', 'Family', 'Colleague', 'Other'];
@@ -33,23 +35,39 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
     onClose,
     initialDate,
     onSuccess,
-    birthdayToEdit
+    birthdayToEdit,
+    extractedData
 }) => {
     const [avatar, setAvatar] = useState<string | null>(null);
     const [date, setDate] = useState(initialDate || format(new Date(), 'yyyy-MM-dd'));
+
+    // Memoize year options for better performance
+    const yearOptions = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const years = ['unknown']; // Default option
+        for (let year = currentYear; year >= 1900; year--) {
+            years.push(year.toString());
+        }
+        return years;
+    }, []);
 
     useEffect(() => {
         if (visible) {
             if (birthdayToEdit) {
                 setDate(birthdayToEdit.birthday_date);
                 setAvatar(birthdayToEdit.avatar_url ? supabase.storage.from('avatars').getPublicUrl(birthdayToEdit.avatar_url).data.publicUrl : null);
+            } else if (extractedData) {
+                // Pre-fill from AI extracted data
+                setAvatar(null);
+                if (extractedData.date) setDate(extractedData.date);
+                else setDate(format(new Date(), 'yyyy-MM-dd'));
             } else {
                 setAvatar(null);
                 if (initialDate) setDate(initialDate);
                 else setDate(format(new Date(), 'yyyy-MM-dd'));
             }
         }
-    }, [visible, initialDate, birthdayToEdit]);
+    }, [visible, initialDate, birthdayToEdit, extractedData]);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -91,20 +109,39 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
                 }
             }
 
-            // Calculate birth year based on turningAge
+            // Calculate birth year
             let birthYear = null;
-            if (values.turningAge) {
-                const bDate = new Date(date);
-                birthYear = bDate.getFullYear() - parseInt(values.turningAge);
-                // Adjust if birthday hasn't happened yet this year? 
-                // Actually "turning age" usually refers to the age they WILL be on their birthday in the CURRENT year.
-                // So birthYear = 2026 - 25 = 2001.
+            let finalYearStr = '1900'; // Default safe year for DB
+
+            if (values.birthYear && values.birthYear !== 'unknown') {
+                birthYear = parseInt(values.birthYear);
+                finalYearStr = values.birthYear;
             }
+
+            // Construct valid DB date (YYYY-MM-DD)
+            // Handle if date is "0000-06-20" or just "06-20" (from extraction)
+            // We assume 'date' state holds at least "-MM-DD" or "YYYY-MM-DD"
+            const dateParts = date.split('-');
+            // If we have at least 3 parts (YYYY, MM, DD)
+            let month = '01';
+            let day = '01';
+
+            if (dateParts.length >= 3) {
+                // [year, month, day]
+                month = dateParts[1];
+                day = dateParts[2];
+            } else if (dateParts.length === 2 && date.startsWith('-')) {
+                // [-MM, DD] ? unlikely format from normalizeDate
+                // normalizeDate returns "0000-MM-DD"
+            }
+
+            const finalDate = `${finalYearStr}-${month}-${day}`;
+            console.log(`Saving Birthday: Date=${finalDate}, Year=${birthYear}`);
 
             const payload = {
                 user_id: user.id,
                 name: values.name,
-                birthday_date: date,
+                birthday_date: finalDate,
                 relationship: values.relationship,
                 notes: values.notes,
                 avatar_url: avatarUrl,
@@ -170,12 +207,12 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
 
                         <Formik
                             initialValues={{
-                                name: birthdayToEdit?.name || '',
+                                name: birthdayToEdit?.name || extractedData?.name || '',
                                 relationship: birthdayToEdit?.relationship || 'Friend',
-                                notes: birthdayToEdit?.notes || '',
-                                turningAge: birthdayToEdit?.birth_year
-                                    ? (new Date().getFullYear() - birthdayToEdit.birth_year).toString()
-                                    : ''
+                                notes: birthdayToEdit?.notes || extractedData?.notes || '',
+                                birthYear: birthdayToEdit?.birth_year
+                                    ? birthdayToEdit.birth_year.toString()
+                                    : (extractedData?.date && extractedData.date.startsWith('0000')) ? 'unknown' : ''
                             }}
                             validationSchema={birthdaySchema}
                             onSubmit={handleSave}
@@ -191,15 +228,27 @@ export const AddBirthdayModal: React.FC<AddBirthdayModalProps> = ({
                                         error={touched.name && errors.name ? errors.name as string : undefined}
                                     />
 
-                                    <Input
-                                        label="How old are they turning this year?"
-                                        placeholder="e.g. 25"
-                                        keyboardType="numeric"
-                                        value={values.turningAge}
-                                        onChangeText={handleChange('turningAge')}
-                                        onBlur={handleBlur('turningAge')}
-                                        error={touched.turningAge && errors.turningAge ? errors.turningAge as string : undefined}
-                                    />
+                                    {/* Birth Year Picker */}
+                                    <View style={styles.yearPickerSection}>
+                                        <Text style={styles.yearPickerLabel}>Birth Year (Optional)</Text>
+                                        <View style={styles.pickerContainer}>
+                                            <Picker
+                                                selectedValue={values.birthYear || 'unknown'}
+                                                onValueChange={(value) => setFieldValue('birthYear', value)}
+                                                style={styles.picker}
+                                                dropdownIconColor={colors.primary}
+                                            >
+                                                {yearOptions.map((year) => (
+                                                    <Picker.Item
+                                                        key={year}
+                                                        label={year === 'unknown' ? 'Unknown' : year}
+                                                        value={year}
+                                                        color={colors.text}
+                                                    />
+                                                ))}
+                                            </Picker>
+                                        </View>
+                                    </View>
 
                                     <View style={styles.relationshipSection}>
                                         <Text style={styles.relationshipLabel}>Relationship</Text>
@@ -358,5 +407,26 @@ const styles = StyleSheet.create({
     },
     cancelButton: {
         marginTop: spacing.sm,
+    },
+    yearPickerSection: {
+        marginBottom: spacing.md,
+    },
+    yearPickerLabel: {
+        color: colors.textSecondary,
+        marginBottom: spacing.sm,
+        marginLeft: 4,
+        fontSize: typography.sizes.sm,
+        fontWeight: typography.weights.medium,
+    },
+    pickerContainer: {
+        backgroundColor: colors.surfaceHighlight,
+        borderRadius: borderRadius.lg,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        overflow: 'hidden',
+    },
+    picker: {
+        color: colors.text,
+        backgroundColor: 'transparent',
     },
 });

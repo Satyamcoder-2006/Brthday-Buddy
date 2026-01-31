@@ -1,11 +1,12 @@
 import React from 'react';
-import { Image, Text, View, StyleSheet } from 'react-native';
-import { colors, borderRadius } from '../../theme';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, borderRadius, gradients } from '../../theme';
 
 interface AvatarProps {
     uri?: string;
     name: string;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 }
 
 export const Avatar: React.FC<AvatarProps> = ({ uri, name, size = 'md' }) => {
@@ -13,7 +14,8 @@ export const Avatar: React.FC<AvatarProps> = ({ uri, name, size = 'md' }) => {
         sm: 32,
         md: 48,
         lg: 64,
-        xl: 120,
+        xl: 96,
+        xxl: 120,
     };
 
     const width = sizeMap[size];
@@ -21,6 +23,7 @@ export const Avatar: React.FC<AvatarProps> = ({ uri, name, size = 'md' }) => {
 
     const initials = name
         .split(' ')
+        .filter(Boolean)
         .map(n => n[0])
         .slice(0, 2)
         .join('')
@@ -35,9 +38,18 @@ export const Avatar: React.FC<AvatarProps> = ({ uri, name, size = 'md' }) => {
                     resizeMode="cover"
                 />
             ) : (
-                <Text style={[styles.initials, { fontSize: textSize }]}>
-                    {initials}
-                </Text>
+                <LinearGradient
+                    colors={gradients.surface as any}
+                    style={StyleSheet.absoluteFill}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <View style={styles.initialsContainer}>
+                        <Text style={[styles.initials, { fontSize: textSize }]}>
+                            {initials}
+                        </Text>
+                    </View>
+                </LinearGradient>
             )}
         </View>
     );
@@ -47,18 +59,22 @@ const styles = StyleSheet.create({
     container: {
         borderRadius: borderRadius.full,
         overflow: 'hidden',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.border,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: colors.borderLight,
+        backgroundColor: colors.surface,
     },
     image: {
         width: '100%',
         height: '100%',
     },
+    initialsContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     initials: {
         fontWeight: 'bold',
         color: colors.primary,
+        letterSpacing: 1,
     },
 });

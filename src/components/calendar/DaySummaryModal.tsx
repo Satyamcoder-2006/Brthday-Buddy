@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Birthday } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { colors, spacing, borderRadius, typography } from '../../theme';
 import { supabase } from '../../services/supabase';
+import { cancelBirthdayNotifications } from '../../services/notifications';
 
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -32,11 +33,33 @@ export const DaySummaryModal: React.FC<DaySummaryModalProps> = ({
     onDeleteSuccess,
 }) => {
     const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-    const handleDelete = async (id: string) => {
-        const { error } = await supabase.from('birthdays').delete().eq('id', id);
-        if (!error) {
-            onDeleteSuccess();
-        }
+
+    const handleDelete = async (birthday: Birthday) => {
+        Alert.alert(
+            'Delete Birthday',
+            `Are you sure you want to delete ${birthday.name}'s birthday?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            // Cancel notifications first
+                            await cancelBirthdayNotifications(birthday);
+
+                            // Then delete the birthday
+                            const { error } = await supabase.from('birthdays').delete().eq('id', birthday.id);
+                            if (error) throw error;
+
+                            onDeleteSuccess();
+                        } catch (error: any) {
+                            Alert.alert('Error', `Failed to delete birthday: ${error.message}`);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     return (
@@ -83,7 +106,7 @@ export const DaySummaryModal: React.FC<DaySummaryModalProps> = ({
                                     >
                                         <Ionicons name="pencil-outline" size={20} color={colors.info} />
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => handleDelete(b.id)} style={styles.actionBtn}>
+                                    <TouchableOpacity onPress={() => handleDelete(b)} style={styles.actionBtn}>
                                         <Ionicons name="trash-outline" size={20} color={colors.error} />
                                     </TouchableOpacity>
                                 </View>

@@ -3,8 +3,34 @@ import { scheduleBirthdayNotifications } from './notifications';
 import { supabase } from './supabase';
 
 const NOTIFICATION_TIME_KEY = 'notification_time';
+const AI_PROVIDER_KEY = 'preferred_ai_provider';
 
 export const SettingsService = {
+    /**
+     * Get the preferred AI provider (default 'auto')
+     */
+    async getAIProvider(): Promise<'gemini' | 'mistral' | 'auto'> {
+        try {
+            const provider = await AsyncStorage.getItem(AI_PROVIDER_KEY);
+            return (provider as any) || 'auto';
+        } catch (e) {
+            console.error('Failed to load AI provider', e);
+            return 'auto';
+        }
+    },
+
+    /**
+     * Set the preferred AI provider
+     */
+    async setAIProvider(provider: 'gemini' | 'mistral' | 'auto'): Promise<void> {
+        try {
+            await AsyncStorage.setItem(AI_PROVIDER_KEY, provider);
+        } catch (error) {
+            console.error('Failed to set AI provider:', error);
+            throw error;
+        }
+    },
+
     /**
      * Get the preferred notification time (default 9:00 AM)
      */
@@ -46,7 +72,7 @@ export const SettingsService = {
                 if (birthdays && birthdays.length > 0) {
                     console.log(`Rescheduling ${birthdays.length} birthdays to ${hour}:${minute}...`);
                     // Process in parallel chunks to speed up
-                    await Promise.all(birthdays.map(b => scheduleBirthdayNotifications(b)));
+                    await Promise.all(birthdays.map((b: any) => scheduleBirthdayNotifications(b)));
                 }
             }
         } catch (error) {

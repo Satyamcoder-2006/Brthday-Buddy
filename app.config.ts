@@ -4,6 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: "Birthday Buddy",
     slug: "birthday-buddy",
+    owner: "sat2006yam",
     scheme: "birthdaybuddy",
     version: "1.0.0",
     orientation: "portrait",
@@ -51,6 +52,28 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             "android.permission.READ_MEDIA_IMAGES",
             "android.permission.READ_MEDIA_VIDEO",
             "android.permission.READ_MEDIA_AUDIO"
+        ],
+        intentFilters: [
+            {
+                action: "VIEW",
+                autoVerify: true,
+                data: [
+                    {
+                        scheme: "https",
+                        host: "birthdaybuddy.app",
+                        pathPrefix: "/party"
+                    },
+                    {
+                        scheme: "https",
+                        host: "www.birthdaybuddy.app",
+                        pathPrefix: "/party"
+                    },
+                    {
+                        scheme: "birthdaybuddy"
+                    }
+                ],
+                category: ["BROWSABLE", "DEFAULT"]
+            }
         ]
     },
     plugins: [
@@ -84,13 +107,30 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             {
                 "widgets": [
                     {
-                        "name": "BirthdayWidget",
-                        "minWidth": "180dp",
+                        "name": "BirthdayWidgetSmall",
+                        "minWidth": "110dp",
                         "minHeight": "110dp",
-                        "description": "Shows the next upcoming birthday",
-                        "previewImage": "./assets/widget-preview.png",
-                        "targetCellWidth": 3,
+                        "targetCellWidth": 2,
                         "targetCellHeight": 2,
+                        "description": "Minimal birthday countdown",
+                        "updatePeriodMillis": 1800000
+                    },
+                    {
+                        "name": "BirthdayWidgetMedium",
+                        "minWidth": "250dp",
+                        "minHeight": "110dp",
+                        "targetCellWidth": 4,
+                        "targetCellHeight": 2,
+                        "description": "Birthday info with quick actions",
+                        "updatePeriodMillis": 1800000
+                    },
+                    {
+                        "name": "BirthdayWidgetLarge",
+                        "minWidth": "250dp",
+                        "minHeight": "250dp",
+                        "targetCellWidth": 4,
+                        "targetCellHeight": 4,
+                        "description": "List of upcoming birthdays",
                         "updatePeriodMillis": 1800000
                     }
                 ]

@@ -90,14 +90,62 @@ const generateContentWithFallback = async (
 export const getGiftSuggestions = async (
     birthday: Birthday,
     budget: string,
-    isDemo: boolean = false
+    isDemo: boolean = false,
+    preferredProvider: 'gemini' | 'mistral' | 'auto' = 'auto'
 ): Promise<GiftSuggestion[]> => {
-    // If no API key, use mock suggestions
+    // Dynamic import to avoid circular dependency
+    const { getMistralGiftSuggestions, isMistralAvailable } = await import('./MistralGiftService');
+
+    // Determine provider to use
+    let provider = preferredProvider;
+    if (provider === 'auto') {
+        // Auto: prefer Mistral if available, fallback to Gemini
+        provider = isMistralAvailable() ? 'mistral' : 'gemini';
+    }
+
+    console.log(`🎁 Getting gift suggestions via ${provider.toUpperCase()}`);
+
+    // Try preferred provider first
+    if (provider === 'mistral') {
+        try {
+            return await getMistralGiftSuggestions(birthday);
+        } catch (error) {
+            console.warn('Mistral failed, falling back to Gemini:', error);
+            // Fallback to Gemini
+            if (!GEMINI_API_KEY) {
+                console.warn('No Gemini API key, using mock data');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                return getMockSuggestions(birthday, budget);
+            }
+            return await getGeminiGiftSuggestions(birthday, budget, isDemo);
+        }
+    }
+
+    // Use Gemini (either explicitly selected or after Mistral failed)
     if (!GEMINI_API_KEY) {
-        // Simulate network delay for AI "thinking" even for mock
+        console.warn('No Gemini API key, checking Mistral...');
+        if (isMistralAvailable()) {
+            try {
+                return await getMistralGiftSuggestions(birthday);
+            } catch (error) {
+                console.warn('Mistral also failed, using mock data');
+            }
+        }
         await new Promise(resolve => setTimeout(resolve, 1500));
         return getMockSuggestions(birthday, budget);
     }
+
+    return await getGeminiGiftSuggestions(birthday, budget, isDemo);
+};
+
+/**
+ * Get gift suggestions specifically from Gemini
+ */
+const getGeminiGiftSuggestions = async (
+    birthday: Birthday,
+    budget: string,
+    isDemo: boolean = false
+): Promise<GiftSuggestion[]> => {
 
     try {
         return await callGeminiAPI(birthday, budget);

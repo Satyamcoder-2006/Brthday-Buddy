@@ -9,18 +9,23 @@ import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { DataExportService } from '../services/DataExportService';
+import { DocumentImportService } from '../services/DocumentImportService';
+import { MistralOCRService } from '../services/MistralOCRService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SettingsService } from '../services/SettingsService';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 export const SettingsScreen = () => {
+    const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
     const [profile, setProfile] = useState<any>({ name: 'Demo User', email: 'demo@example.com' });
     const [loading, setLoading] = useState(true);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [notificationTime, setNotificationTime] = useState(new Date());
     const [showTimePicker, setShowTimePicker] = useState(false);
+    const [aiProvider, setAiProvider] = useState<'gemini' | 'mistral' | 'auto'>('auto');
 
     useEffect(() => {
         fetchProfile();
@@ -39,12 +44,25 @@ export const SettingsScreen = () => {
             date.setHours(time.hour, time.minute, 0, 0);
             setNotificationTime(date);
 
+            // Load AI Provider
+            const provider = await SettingsService.getAIProvider();
+            setAiProvider(provider);
+
             if (isEnabled) {
                 const { status } = await Notifications.getPermissionsAsync();
                 if (status !== 'granted') setNotificationsEnabled(false);
             }
         } catch (e) {
             console.log('Error loading settings', e);
+        }
+    };
+
+    const handleAIProviderChange = async (provider: 'gemini' | 'mistral' | 'auto') => {
+        try {
+            setAiProvider(provider);
+            await SettingsService.setAIProvider(provider);
+        } catch (e) {
+            Alert.alert('Error', 'Failed to save AI preference');
         }
     };
 
@@ -174,6 +192,71 @@ export const SettingsScreen = () => {
         }
     };
 
+    const handleImportData = async () => {
+        Alert.alert(
+            'Import Birthdays',
+            'Choose a source to import from (Powered by Mistral AI)',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Document (PDF/CSV)',
+                    onPress: async () => {
+                        processImport('document');
+                    }
+                },
+                {
+                    text: 'Image (Screenshot)',
+                    onPress: async () => {
+                        processImport('image');
+                    }
+                }
+            ]
+        );
+    };
+
+    const processImport = async (type: 'document' | 'image') => {
+        setLoading(true);
+        try {
+            const importService = new DocumentImportService();
+            const extractorService = new MistralOCRService();
+            let extractedData: any[] = [];
+
+            if (type === 'document') {
+                const doc = await importService.pickDocument();
+                const base64 = await importService.readFileAsBase64(doc.uri);
+
+                if (doc.mimeType === 'application/pdf') {
+                    extractedData = await extractorService.extractFromPDF(base64);
+                } else if (doc.mimeType?.includes('text') || doc.mimeType?.includes('csv')) {
+                    const text = await importService.readFileAsText(doc.uri);
+                    extractedData = await extractorService.extractFromCSV(text);
+                } else {
+                    Alert.alert('Error', 'Unsupported file type');
+                    return;
+                }
+            } else {
+                const image = await importService.pickImage();
+                if (image.base64) {
+                    extractedData = await extractorService.extractFromImage(image.base64);
+                }
+            }
+
+            if (extractedData && extractedData.length > 0) {
+                navigation.navigate('ImportPreview', { extractedData });
+            } else {
+                Alert.alert('No Data Found', 'Could not extract any birthday information.');
+            }
+
+        } catch (error: any) {
+            if (error.message !== 'Document selection cancelled' && error.message !== 'Image selection cancelled') {
+                console.error(error);
+                Alert.alert('Import Failed', error.message || 'An error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
             <Text style={styles.title}>Settings</Text>
@@ -250,6 +333,47 @@ export const SettingsScreen = () => {
                     </View>
 
                     <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Party Hosting</Text>
+                        <TouchableOpacity
+                            style={styles.row}
+                            onPress={() => navigation.navigate('MyParties')}
+                        >
+                            <Ionicons name="wine" size={24} color={colors.primary} />
+                            <Text style={styles.rowText}>My Hosted Parties</Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} style={styles.chevron} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>AI Preferences</Text>
+                        {(['auto', 'mistral', 'gemini'] as const).map((provider) => (
+                            <TouchableOpacity
+                                key={provider}
+                                style={styles.row}
+                                onPress={() => handleAIProviderChange(provider)}
+                            >
+                                <Ionicons
+                                    name={aiProvider === provider ? "radio-button-on" : "radio-button-off"}
+                                    size={24}
+                                    color={aiProvider === provider ? colors.primary : colors.textDisabled}
+                                />
+                                <Text style={[
+                                    styles.rowText,
+                                    aiProvider === provider && { color: colors.primary, fontWeight: 'bold' }
+                                ]}>
+                                    {provider === 'auto' ? 'Auto (Recommended)' : provider.charAt(0).toUpperCase() + provider.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <View style={styles.section}>
+                        <TouchableOpacity style={styles.row} onPress={handleImportData}>
+                            <Ionicons name="cloud-download" size={24} color={colors.info} />
+                            <Text style={styles.rowText}>Import Birthdays (AI)</Text>
+                            <Ionicons name="chevron-forward" size={20} color={colors.textDisabled} style={styles.chevron} />
+                        </TouchableOpacity>
+
                         <TouchableOpacity style={styles.row} onPress={handleExportData}>
                             <Ionicons name="cloud-upload" size={24} color={colors.textDisabled} />
                             <Text style={styles.rowText}>Export Data (CSV)</Text>
@@ -333,6 +457,15 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontSize: typography.sizes.lg,
         marginLeft: spacing.sm + 4,
+    },
+    sectionTitle: {
+        color: colors.textDisabled,
+        fontSize: typography.sizes.sm,
+        fontWeight: typography.weights.bold,
+        textTransform: 'uppercase',
+        marginLeft: spacing.md,
+        marginTop: spacing.md,
+        marginBottom: spacing.xs,
     },
     logoutText: {
         color: colors.error,

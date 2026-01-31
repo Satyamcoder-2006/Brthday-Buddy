@@ -9,6 +9,8 @@ Notifications.setNotificationHandler({
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
     }),
 });
 
@@ -48,17 +50,41 @@ export async function registerForPushNotificationsAsync() {
 
 // ... (existing imports)
 
+/**
+ * Cancel all scheduled notifications for a birthday
+ * Call this before deleting a birthday to prevent ghost notifications
+ */
+export async function cancelBirthdayNotifications(birthday: Birthday): Promise<void> {
+    if (!birthday.notification_ids || birthday.notification_ids.length === 0) {
+        console.log(`No notifications to cancel for birthday: ${birthday.id}`);
+        return;
+    }
+
+    console.log(`Canceling ${birthday.notification_ids.length} notifications for: ${birthday.name}`);
+
+    const cancelResults = await Promise.allSettled(
+        birthday.notification_ids.map(id =>
+            Notifications.cancelScheduledNotificationAsync(id)
+                .then(() => {
+                    console.log(`✓ Canceled notification ${id}`);
+                    return true;
+                })
+                .catch(err => {
+                    console.warn(`⚠️ Failed to cancel notification ${id}:`, err.message);
+                    return false;
+                })
+        )
+    );
+
+    const successCount = cancelResults.filter(r => r.status === 'fulfilled' && r.value).length;
+    console.log(`Successfully canceled ${successCount}/${birthday.notification_ids.length} notifications`);
+}
+
 export async function scheduleBirthdayNotifications(birthday: Birthday) {
     const notificationIds: string[] = [];
 
     // Cancel existing notifications for this birthday
-    if (birthday.notification_ids?.length) {
-        await Promise.all(
-            birthday.notification_ids.map(id =>
-                Notifications.cancelScheduledNotificationAsync(id).catch(() => { /* Ignore cleanup errors */ })
-            )
-        );
-    }
+    await cancelBirthdayNotifications(birthday);
 
     // Get Data
     let preferredHour = 9;

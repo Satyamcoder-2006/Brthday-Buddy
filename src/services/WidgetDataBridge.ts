@@ -2,11 +2,20 @@ import WidgetDataBridgeModule from '../../modules/widget-data-bridge';
 
 // Data interface
 export interface WidgetData {
+    id: string; // Next birthday ID
     name: string;
     daysUntil: number;
     date: string;
     age: number;
     lastUpdated: string;
+    upcoming?: {
+        id: string;
+        name: string;
+        daysUntil: number;
+        date: string;
+        age: number;
+        photoUrl?: string;
+    }[];
 }
 
 export const WidgetStorage = {

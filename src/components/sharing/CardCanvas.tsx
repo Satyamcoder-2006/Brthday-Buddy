@@ -1,15 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { GradientWavesCard } from './layouts/GradientWavesCard';
 import { MinimalEleganceCard } from './layouts/MinimalEleganceCard';
-import { ConfettiBurstCard } from './layouts/ConfettiBurstCard';
 import { RetroNeonCard } from './layouts/RetroNeonCard';
-import { FloralDreamCard } from './layouts/FloralDreamCard';
 import { GeometricModernCard } from './layouts/GeometricModernCard';
-import { BalloonPartyCard } from './layouts/BalloonPartyCard';
 import { StarryNightCard } from './layouts/StarryNightCard';
 import { GlassmorphismCard } from './layouts/GlassmorphismCard';
-import { GlitchCyberCard } from './layouts/GlitchCyberCard';
 import { CardState, BirthdayInfo, CardElement } from './types';
 import { DraggableElement } from './DraggableElement';
 
@@ -37,24 +32,14 @@ export const CardCanvas = ({
         switch (state.layoutId) {
             case 'minimal_elegance':
                 return <MinimalEleganceCard birthday={birthday} state={state} />;
-            case 'gradient_waves':
-                return <GradientWavesCard birthday={birthday} state={state} />;
-            case 'confetti_burst':
-                return <ConfettiBurstCard birthday={birthday} state={state} />;
             case 'retro_neon':
                 return <RetroNeonCard birthday={birthday} state={state} />;
-            case 'floral_dream':
-                return <FloralDreamCard birthday={birthday} state={state} />;
             case 'geometric_modern':
                 return <GeometricModernCard birthday={birthday} state={state} />;
-            case 'balloon_party':
-                return <BalloonPartyCard birthday={birthday} state={state} />;
             case 'starry_night':
                 return <StarryNightCard birthday={birthday} state={state} />;
             case 'glassmorphism':
                 return <GlassmorphismCard birthday={birthday} state={state} />;
-            case 'glitch_cyber':
-                return <GlitchCyberCard birthday={birthday} state={state} />;
             default:
                 // Fallback to minimal if layout not found
                 return <MinimalEleganceCard birthday={birthday} state={state} />;

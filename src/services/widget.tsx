@@ -1,7 +1,7 @@
 import { Birthday } from '../types';
 import { differenceInDays, addYears, isBefore, startOfDay } from 'date-fns';
 import { requestWidgetUpdate } from 'react-native-android-widget';
-import { BirthdayWidget } from '../widgets/BirthdayWidget';
+import { BirthdayWidget, EmptyBirthdayWidget } from '../widgets/BirthdayWidget';
 import React from 'react';
 import { WidgetStorage } from './WidgetDataBridge';
 
@@ -18,12 +18,7 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
             await requestWidgetUpdate({
                 widgetName: 'BirthdayWidget',
                 renderWidget: () => (
-                    <BirthdayWidget
-                        name="No Birthdays"
-                        daysUntil={0}
-                        date=""
-                        age={0}
-                    />
+                    <EmptyBirthdayWidget />
                 ),
                 widgetNotFound: () => {
                     console.log('Birthday widget not found on home screen');
@@ -72,31 +67,41 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         const nextUp = upcomingBirthdays[0];
 
         const widgetData = {
+            id: nextUp.id,
             name: nextUp.name,
             daysUntil: nextUp.daysUntil,
             date: nextUp.birthday_date,
             age: nextUp.turningAge,
             lastUpdated: new Date().toISOString(),
+            upcoming: upcomingBirthdays.slice(0, 5).map(b => ({
+                id: b.id,
+                name: b.name,
+                daysUntil: b.daysUntil,
+                date: b.birthday_date,
+                age: b.turningAge,
+                photoUrl: b.avatar_url
+            }))
         };
 
         // Save to SharedPreferences (accessible by widget)
         await WidgetStorage.saveWidgetData(widgetData);
 
-        // Trigger widget update
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidget',
-            renderWidget: () => (
-                <BirthdayWidget
-                    name={widgetData.name}
-                    daysUntil={widgetData.daysUntil}
-                    date={widgetData.date}
-                    age={widgetData.age}
-                />
-            ),
-            widgetNotFound: () => {
-                console.log('Birthday widget not found on home screen');
+        // Trigger updates for all widget sizes
+        const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
+
+        for (const widgetName of widgetSizes) {
+            try {
+                await requestWidgetUpdate({
+                    widgetName,
+                    renderWidget: () => <EmptyBirthdayWidget />, // Placeholder, handler will do real render
+                    widgetNotFound: () => {
+                        // This is expected for sizes not added to home screen
+                    }
+                });
+            } catch (e) {
+                console.log(`Failed to trigger update for ${widgetName}`);
             }
-        });
+        }
 
     } catch (error) {
         console.error('Failed to update widget data:', error);
@@ -122,27 +127,20 @@ export const getWidgetData = async () => {
 export const refreshWidget = async (): Promise<void> => {
     try {
         const data = await WidgetStorage.getWidgetData();
+        const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
 
-        if (!data) {
-            console.log('No widget data available');
-            return;
-        }
-
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidget',
-            renderWidget: () => (
-                <BirthdayWidget
-                    name={data.name}
-                    daysUntil={data.daysUntil}
-                    date={data.date}
-                    age={data.age}
-                />
-            ),
-            widgetNotFound: () => {
-                console.log('Birthday widget not found on home screen');
+        for (const widgetName of widgetSizes) {
+            try {
+                await requestWidgetUpdate({
+                    widgetName,
+                    renderWidget: () => <EmptyBirthdayWidget />, // Handler will do real render
+                    widgetNotFound: () => { }
+                });
+            } catch (e) {
+                console.log(`Failed to refresh widget ${widgetName}`);
             }
-        });
+        }
     } catch (error) {
-        console.error('Failed to refresh widget:', error);
+        console.error('Failed to refresh widgets:', error);
     }
 };

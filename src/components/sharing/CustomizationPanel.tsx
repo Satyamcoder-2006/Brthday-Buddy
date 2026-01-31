@@ -57,15 +57,10 @@ export const CustomizationPanel = ({ state, onChange, birthday }: Props) => {
 
     const layouts: { id: LayoutId; label: string }[] = [
         { id: 'minimal_elegance', label: 'Minimal' },
-        { id: 'gradient_waves', label: 'Waves' },
-        { id: 'confetti_burst', label: 'Confetti' },
         { id: 'retro_neon', label: 'Neon' },
-        { id: 'floral_dream', label: 'Floral' },
         { id: 'geometric_modern', label: 'Modern' },
-        { id: 'balloon_party', label: 'Balloons' },
         { id: 'starry_night', label: 'Starry' },
         { id: 'glassmorphism', label: 'Glass' },
-        { id: 'glitch_cyber', label: 'Cyber' },
     ];
 
     return (

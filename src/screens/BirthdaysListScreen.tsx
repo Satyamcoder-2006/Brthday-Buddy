@@ -5,16 +5,18 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase, isDemoMode } from '../services/supabase';
+import { cancelBirthdayNotifications } from '../services/notifications';
 import { BirthdayListItem } from '../components/birthdays/BirthdayListItem';
 import { Loading } from '../components/common/Loading';
 import { EmptyState } from '../components/common/EmptyState';
 import { Birthday, RootStackParamList } from '../types';
 import { addYears, differenceInDays } from 'date-fns';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, spacing, borderRadius, typography, gradients } from '../theme';
 import { NextBirthdayCard } from '../components/birthdays/NextBirthdayCard';
 import { AddBirthdayModal } from '../components/calendar/AddBirthdayModal';
 import { GiftSuggestionsModal } from '../components/gifts/GiftSuggestionsModal';
 import { updateWidgetData } from '../services/widget';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const FILTERS = ['All', 'This Week', 'This Month'];
 
@@ -73,9 +75,22 @@ export const BirthdaysListScreen = () => {
                             setBirthdays(prev => prev.filter(b => b.id !== id));
                             return;
                         }
-                        const { error } = await supabase.from('birthdays').delete().eq('id', id);
-                        if (!error) {
+
+                        try {
+                            // Find the birthday to get notification IDs
+                            const birthday = birthdays.find(b => b.id === id);
+                            if (birthday) {
+                                // Cancel notifications first
+                                await cancelBirthdayNotifications(birthday);
+                            }
+
+                            // Then delete from database
+                            const { error } = await supabase.from('birthdays').delete().eq('id', id);
+                            if (error) throw error;
+
                             setBirthdays(prev => prev.filter(b => b.id !== id));
+                        } catch (error: any) {
+                            Alert.alert('Error', `Failed to delete birthday: ${error.message}`);
                         }
                     }
                 }
@@ -144,12 +159,30 @@ export const BirthdaysListScreen = () => {
     return (
         <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
             <View style={styles.header}>
-                <Text style={styles.title}>Birthdays</Text>
+                <View style={styles.topHeader}>
+                    <Text style={styles.title}>Birthdays</Text>
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => {
+                            setBirthdayToEdit(undefined);
+                            setModalVisible(true);
+                        }}
+                    >
+                        <LinearGradient
+                            colors={gradients.primary as any}
+                            style={styles.addButtonGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <Ionicons name="add" size={24} color="white" />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
 
                 {!isDemoMode && (
                     <>
                         <View style={styles.searchContainer}>
-                            <Ionicons name="search" size={20} color={colors.textDisabled} />
+                            <Ionicons name="search" size={16} color={colors.textTertiary} />
                             <TextInput
                                 style={styles.searchInput}
                                 placeholder="Search"
@@ -187,7 +220,7 @@ export const BirthdaysListScreen = () => {
                 ListHeaderComponent={nextBirthday ? (
                     <NextBirthdayCard
                         birthday={nextBirthday as any}
-                        onPress={() => handleShare(nextBirthday as any)}
+                        onPress={() => navigation.navigate('BirthdayDetail', { birthday: nextBirthday as any })}
                         onGiftPress={() => handleGift(nextBirthday as any)}
                     />
                 ) : null}
@@ -198,6 +231,7 @@ export const BirthdaysListScreen = () => {
                         onEdit={handleEdit}
                         onShare={handleShare}
                         onGift={handleGift}
+                        onPress={(item) => navigation.navigate('BirthdayDetail', { birthday: item })}
                     />
                 )}
                 keyExtractor={(item: any) => item.id}
@@ -213,16 +247,6 @@ export const BirthdaysListScreen = () => {
                 }
                 contentContainerStyle={styles.listContent}
             />
-
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => {
-                    setBirthdayToEdit(undefined);
-                    setModalVisible(true);
-                }}
-            >
-                <Ionicons name="add" size={32} color="white" />
-            </TouchableOpacity>
 
             <AddBirthdayModal
                 visible={modalVisible}
@@ -247,69 +271,85 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: spacing.md,
+        marginBottom: spacing.sm,
+    },
+    topHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: spacing.md,
     },
     title: {
         color: colors.text,
-        fontSize: typography.sizes['4xl'],
+        fontSize: 28, // Reduced from 34
         fontFamily: typography.fonts.heading,
-        marginBottom: spacing.sm,
-        letterSpacing: 1,
+        letterSpacing: 0.5,
+    },
+    addButton: {
+        width: 40, // Reduced from 44
+        height: 40, // Reduced from 44
+        borderRadius: 20,
+        overflow: 'hidden',
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    addButtonGradient: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     searchContainer: {
-        backgroundColor: colors.surfaceHighlight,
-        height: 40,
-        borderRadius: borderRadius.md,
+        backgroundColor: 'rgba(255,255,255,0.08)', // Blur/translucency effect
+        height: 40, // Reduced from 44
+        borderRadius: borderRadius.lg,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing.sm + 4,
+        paddingHorizontal: spacing.md,
         marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     searchInput: {
         flex: 1,
         marginLeft: spacing.sm,
         color: colors.text,
+        fontSize: 16,
     },
     filterContainer: {
         flexDirection: 'row',
+        marginBottom: spacing.sm,
     },
     filterChip: {
-        marginRight: spacing.sm,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 6,
+        marginRight: spacing.md, // Increased spacing
+        paddingHorizontal: spacing.md, // Reduced padding
+        paddingVertical: 8,
         borderRadius: borderRadius.full,
+        backgroundColor: colors.surfaceHighlight,
         borderWidth: 1,
-        borderColor: colors.borderLight,
-        backgroundColor: 'transparent',
+        borderColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     filterChipActive: {
         backgroundColor: colors.primary,
         borderColor: colors.primary,
     },
     filterText: {
-        color: colors.textDisabled,
+        color: colors.textSecondary,
+        fontSize: 14,
+        fontWeight: '600',
     },
     filterTextActive: {
-        color: colors.text,
-        fontWeight: typography.weights.bold,
+        color: 'white',
+        fontWeight: '700',
     },
     listContent: {
-        paddingBottom: spacing.lg + 80,
-    },
-    fab: {
-        position: 'absolute',
-        bottom: spacing.lg,
-        right: spacing.lg,
-        width: 56,
-        height: 56,
-        backgroundColor: colors.primary,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
+        paddingBottom: spacing.xxl,
     },
 });

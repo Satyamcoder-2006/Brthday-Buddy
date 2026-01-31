@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, LinkingOptions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,18 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { BirthdaysListScreen } from '../screens/BirthdaysListScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { MyPartiesScreen } from '../screens/MyPartiesScreen';
 import { SocialShareScreen } from '../screens/SocialShareScreen';
 import { Loading } from '../components/common/Loading';
+import { ImportPreviewScreen } from '../screens/ImportPreviewScreen';
+import { BirthdayDetailScreen } from '../screens/BirthdayDetailScreen';
+import { GiftRegistryScreen } from '../screens/GiftRegistryScreen';
+import { PartyHostingScreen } from '../screens/PartyHostingScreen';
+import { PartyDetailScreen } from '../screens/PartyDetailScreen';
+import { PartyJoinScreen } from '../screens/PartyJoinScreen';
 import { MainTabParamList, RootStackParamList } from '../types';
 import { colors, spacing, typography } from '../theme';
+import { useDeepLinking } from '../utils/DeepLinkManager';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createStackNavigator<RootStackParamList>();
@@ -51,12 +59,12 @@ const MainTabs = () => {
                         if (route.name === 'Calendar') {
                             iconName = focused ? 'calendar' : 'calendar-outline';
                         } else if (route.name === 'Birthdays') {
-                            iconName = focused ? 'list' : 'list-outline';
+                            iconName = focused ? 'gift' : 'gift-outline';
                         } else if (route.name === 'Settings') {
                             iconName = focused ? 'settings' : 'settings-outline';
                         }
 
-                        return <Ionicons name={iconName} size={size} color={color} />;
+                        return <Ionicons name={iconName} size={24} color={color} />;
                     },
                 })}
             >
@@ -66,6 +74,32 @@ const MainTabs = () => {
             </Tab.Navigator>
         </>
     );
+};
+
+const linking: LinkingOptions<RootStackParamList> = {
+    prefixes: ['birthdaybuddy://', 'https://birthdaybuddy.app'],
+    config: {
+        screens: {
+            Main: {
+                screens: {
+                    Calendar: 'calendar',
+                    Birthdays: 'birthdays',
+                    Settings: 'settings',
+                }
+            },
+            MyParties: 'parties/hosted',
+            PartyJoin: 'party/:partyId',
+            PartyDetail: 'party/detail/:partyId',
+            PartyHosting: 'party/host',
+            BirthdayDetail: 'birthday/:birthdayId',
+            SocialShare: 'share/:birthdayId',
+        },
+    },
+};
+
+const DeepLinkHandler = () => {
+    useDeepLinking();
+    return null;
 };
 
 export const AppNavigator = () => {
@@ -97,12 +131,20 @@ export const AppNavigator = () => {
     }
 
     return (
-        <NavigationContainer theme={DarkTheme}>
+        <NavigationContainer linking={linking} theme={DarkTheme}>
+            <DeepLinkHandler />
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {session || isDemoMode ? (
                     <>
                         <Stack.Screen name="Main" component={MainTabs} />
                         <Stack.Screen name="SocialShare" component={SocialShareScreen} />
+                        <Stack.Screen name="ImportPreview" component={ImportPreviewScreen} />
+                        <Stack.Screen name="BirthdayDetail" component={BirthdayDetailScreen} />
+                        <Stack.Screen name="GiftRegistry" component={GiftRegistryScreen} />
+                        <Stack.Screen name="PartyHosting" component={PartyHostingScreen} />
+                        <Stack.Screen name="PartyDetail" component={PartyDetailScreen} />
+                        <Stack.Screen name="PartyJoin" component={PartyJoinScreen} />
+                        <Stack.Screen name="MyParties" component={MyPartiesScreen} />
                     </>
                 ) : (
                     <Stack.Screen name="Auth" component={LoginScreen} />

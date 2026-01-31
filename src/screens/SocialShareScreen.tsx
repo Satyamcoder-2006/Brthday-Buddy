@@ -156,13 +156,10 @@ export const SocialShareScreen = () => {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={colors.text} />
-                    <Text style={styles.backText}>Back</Text>
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Card Studio</Text>
-                <TouchableOpacity onPress={handleShare}>
-                    <Ionicons name="share-outline" size={24} color={colors.primary} />
-                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Studio</Text>
+                <View style={{ width: 44 }} />
             </View>
 
             {/* Canvas Preview Area */}
@@ -260,25 +257,25 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 45,
+        paddingTop: 55,
         paddingHorizontal: spacing.md,
         paddingBottom: spacing.sm,
-        backgroundColor: '#1A1A1A',
+        backgroundColor: colors.background,
     },
     headerTitle: {
         color: colors.text,
-        fontSize: typography.sizes.lg,
+        fontSize: 20,
         fontFamily: typography.fonts.heading,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
     backButton: {
-        flexDirection: 'row',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.surfaceHighlight,
+        justifyContent: 'center',
         alignItems: 'center',
-        width: 60,
-    },
-    backText: {
-        color: colors.text,
-        marginLeft: spacing.xs,
-        fontFamily: typography.fonts.body,
     },
     previewContainer: {
         flex: 1,
