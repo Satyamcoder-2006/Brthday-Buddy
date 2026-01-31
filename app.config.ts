@@ -60,12 +60,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
                 data: [
                     {
                         scheme: "https",
-                        host: "birthdaybuddy.app",
+                        host: "brthday-buddy.vercel.app",
                         pathPrefix: "/party"
                     },
                     {
                         scheme: "https",
-                        host: "www.birthdaybuddy.app",
+                        host: "www.brthday-buddy.vercel.app",
                         pathPrefix: "/party"
                     },
                     {
