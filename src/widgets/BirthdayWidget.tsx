@@ -41,44 +41,13 @@ const GradientContainer = (props: {
                     width: 'match_parent',
                     backgroundColor: isToday ? '#FF8C00' : '#FF9500',
                     borderRadius: style.borderRadius || 20,
-                    padding: 0
-                }}
-            />
-            <FlexWidget
-                style={{
-                    width: 150,
-                    height: 150,
-                    borderRadius: 75,
-                    backgroundColor: '#FFFFFF21',
-                    marginTop: -40,
-                    marginLeft: -40,
                 }}
             />
             <FlexWidget
                 style={{
                     height: 'match_parent',
                     width: 'match_parent',
-                    justifyContent: 'flex-end',
-                    alignItems: 'flex-end',
-                    padding: 0
-                }}
-            >
-                <FlexWidget
-                    style={{
-                        width: 120,
-                        height: 120,
-                        borderRadius: 60,
-                        backgroundColor: '#00000014',
-                        marginBottom: -30,
-                        marginRight: -30,
-                    }}
-                />
-            </FlexWidget>
-            <FlexWidget
-                style={{
-                    height: 'match_parent',
-                    width: 'match_parent',
-                    padding: style.padding || 0,
+                    padding: style.padding || 12,
                     flexDirection: style.flexDirection || 'column',
                     justifyContent: style.justifyContent || 'flex-start',
                     alignItems: style.alignItems || 'flex-start',
@@ -93,7 +62,7 @@ const GradientContainer = (props: {
 /**
  * SMALL WIDGET (2x2) - Minimalist countdown
  */
-export const SmallBirthdayWidget = ({ id, name, daysUntil, age }: WidgetProps) => {
+export const SmallBirthdayWidget = ({ id, name, daysUntil, age }: any) => {
     const isToday = daysUntil === 0;
     const titleText = isToday ? 'TODAY!' : `${daysUntil}d`;
     const linkUrl = id ? `birthdaybuddy://birthday/${id}` : 'birthdaybuddy://home';
@@ -105,22 +74,22 @@ export const SmallBirthdayWidget = ({ id, name, daysUntil, age }: WidgetProps) =
             clickAction="OPEN_URI"
             clickActionData={{ uri: linkUrl }}
         >
-            <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: 'match_parent' }}>
                 <TextWidget text="🎂" style={{ fontSize: 16 }} />
-                <FlexWidget style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 }}>
+                <FlexWidget style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 }}>
                     <TextWidget text={titleText} style={{ fontSize: 10, color: '#FF9500', fontWeight: 'bold' }} />
                 </FlexWidget>
             </FlexWidget>
 
-            <FlexWidget style={{ height: 60, justifyContent: 'center', width: 'match_parent' }}>
+            <FlexWidget style={{ height: 40, justifyContent: 'center', width: 'match_parent', marginTop: 4 }}>
                 <TextWidget
-                    text={(name || 'BIRTHDAY').toUpperCase()}
-                    style={{ fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'sans-serif-medium' }}
+                    text={(name || 'Birthdays').toUpperCase()}
+                    style={{ fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' }}
                 />
             </FlexWidget>
 
-            <FlexWidget style={{ backgroundColor: '#FFFFFF33', paddingVertical: 4, borderRadius: 8, alignItems: 'center', width: 'match_parent' }}>
-                <TextWidget text={`Turning ${age || '?'}`} style={{ fontSize: 10, color: '#FFFFFF', fontWeight: 'bold', fontFamily: 'sans-serif' }} />
+            <FlexWidget style={{ backgroundColor: '#00000033', paddingVertical: 4, borderRadius: 8, alignItems: 'center', width: 'match_parent', marginTop: 4 }}>
+                <TextWidget text={`Turning ${age || '?'}`} style={{ fontSize: 10, color: '#FFFFFF', fontWeight: 'bold' }} />
             </FlexWidget>
         </GradientContainer>
     );
@@ -173,9 +142,9 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl 
                     </FlexWidget>
                 </FlexWidget>
 
-                <FlexWidget style={{ flex: 1, justifyContent: 'center', width: 'match_parent', height: 'match_parent' }}>
-                    <TextWidget text={(name || 'Birthday').toUpperCase()} style={{ fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'sans-serif-medium' }} />
-                    <TextWidget text={dateText || ''} style={{ fontSize: 13, color: '#FFFFFFCC', fontWeight: 'bold', fontFamily: 'sans-serif' }} />
+                <FlexWidget style={{ flex: 1, justifyContent: 'center', width: 'match_parent' }}>
+                    <TextWidget text={(name || 'Birthday').toUpperCase()} style={{ fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' }} />
+                    <TextWidget text={dateText || ''} style={{ fontSize: 12, color: '#FFFFFFCC', fontWeight: 'bold' }} />
                 </FlexWidget>
 
                 <FlexWidget style={{ flexDirection: 'row', marginTop: 8, width: 'match_parent' }}>
@@ -210,8 +179,8 @@ const BirthdayListItem = ({ birthday }: { birthday: BirthdayData }) => {
             </FlexWidget>
 
             <FlexWidget style={{ flex: 1 }}>
-                <TextWidget text={birthday.name || ''} style={{ fontSize: 14, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'sans-serif-medium' }} />
-                <TextWidget text={`Turning ${birthday.age || ''}`} style={{ fontSize: 11, color: '#FFFFFFB3', fontFamily: 'sans-serif' }} />
+                <TextWidget text={birthday.name || ''} style={{ fontSize: 14, fontWeight: 'bold', color: '#FFFFFF' }} />
+                <TextWidget text={`Turning ${birthday.age || ''}`} style={{ fontSize: 11, color: '#FFFFFFCC' }} />
             </FlexWidget>
 
             <FlexWidget style={{ backgroundColor: isToday ? '#FFFFFF' : '#FFFFFF33', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
@@ -226,9 +195,9 @@ const BirthdayListItem = ({ birthday }: { birthday: BirthdayData }) => {
  */
 export const LargeBirthdayWidget = ({ upcoming = [] }: WidgetProps) => {
     return (
-        <GradientContainer style={{ padding: 20, borderRadius: 24, flexDirection: 'column' }}>
-            <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <TextWidget text="UPCOMING BIRTHDAYS" style={{ fontSize: 12, fontWeight: 'bold', color: '#FFFFFF', letterSpacing: 1, fontFamily: 'sans-serif-medium' }} />
+        <GradientContainer style={{ padding: 16, borderRadius: 24, flexDirection: 'column' }}>
+            <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <TextWidget text="UPCOMING BIRTHDAYS" style={{ fontSize: 11, fontWeight: 'bold', color: '#FFFFFF' }} />
                 <TextWidget text="🎂" style={{ fontSize: 16 }} />
             </FlexWidget>
 
@@ -245,7 +214,7 @@ export const LargeBirthdayWidget = ({ upcoming = [] }: WidgetProps) => {
             </FlexWidget>
 
             <FlexWidget style={{ backgroundColor: '#FFFFFF33', borderRadius: 12, padding: 10, marginTop: 8, alignItems: 'center' }} clickAction="OPEN_APP">
-                <TextWidget text="View All Birthdays →" style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 'bold', fontFamily: 'sans-serif-medium' }} />
+                <TextWidget text="View All Birthdays →" style={{ fontSize: 12, color: '#FFFFFF', fontWeight: 'bold' }} />
             </FlexWidget>
         </GradientContainer>
     );
@@ -253,18 +222,21 @@ export const LargeBirthdayWidget = ({ upcoming = [] }: WidgetProps) => {
 
 export const EmptyBirthdayWidget = () => (
     <GradientContainer
-        style={{ padding: 24, justifyContent: 'center', alignItems: 'center', borderRadius: 20 }}
+        style={{ padding: 20, justifyContent: 'center', alignItems: 'center', borderRadius: 20 }}
+        isToday={true}
         clickAction="OPEN_APP"
     >
-        <FlexWidget style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#FFFFFF33', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
-            <TextWidget text="🎂" style={{ fontSize: 48 }} />
+        <FlexWidget style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+            <TextWidget text="🎂" style={{ fontSize: 40 }} />
         </FlexWidget>
 
-        <TextWidget text="NO BIRTHDAYS YET" style={{ fontSize: 18, color: '#FFFFFF', fontWeight: 'bold', marginBottom: 8, fontFamily: 'sans-serif-medium', width: 'match_parent', textAlign: 'center' }} />
-        <TextWidget text="Tap to add your first birthday" style={{ fontSize: 12, color: '#FFFFFFCC', marginBottom: 20, textAlign: 'center', fontFamily: 'sans-serif', width: 'match_parent' }} />
+        <FlexWidget style={{ width: 'match_parent', alignItems: 'center', height: 60, justifyContent: 'center' }}>
+            <TextWidget text="NO BIRTHDAYS" style={{ fontSize: 18, color: '#FFFFFF', fontWeight: 'bold' }} />
+            <TextWidget text="Tap to add" style={{ fontSize: 12, color: '#FFFFFF' }} />
+        </FlexWidget>
 
-        <FlexWidget style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 }} clickAction="OPEN_APP">
-            <TextWidget text="Add Birthday" style={{ fontSize: 14, color: '#FF9500', fontWeight: 'bold', fontFamily: 'sans-serif-medium' }} />
+        <FlexWidget style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 15, marginTop: 10 }} clickAction="OPEN_APP">
+            <TextWidget text="Open App" style={{ fontSize: 14, color: '#FF9500', fontWeight: 'bold' }} />
         </FlexWidget>
     </GradientContainer>
 );

@@ -1,8 +1,11 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, LargeBirthdayWidget, EmptyBirthdayWidget } from './BirthdayWidget';
-import { WidgetStorage } from '../services/WidgetDataBridge';
 import { differenceInDays, startOfDay, addYears, isBefore } from 'date-fns';
+
+// Import NativeModules to access SharedPreferences
+import { NativeModules } from 'react-native';
+const { WidgetDataBridgeModule } = NativeModules;
 
 /**
  * Widget Task Handler - Runs in headless JS context
@@ -13,63 +16,91 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     const widgetAction = props.widgetAction;
     const widgetName = widgetInfo.widgetName;
 
+    console.log('=== WIDGET DEBUG START ===');
     console.log('Widget task handler called:', widgetAction, 'for', widgetName);
 
     let widgetData = null;
 
     try {
         // Load data from SharedPreferences via Native Module
-        const stored = await WidgetStorage.getWidgetData();
+        let stored = null;
+
+        if (WidgetDataBridgeModule) {
+            const jsonData = await WidgetDataBridgeModule.getWidgetData();
+            console.log('Raw JSON from native:', jsonData);
+
+            if (jsonData) {
+                stored = JSON.parse(jsonData);
+                console.log('Parsed widget data:', JSON.stringify(stored, null, 2));
+            } else {
+                console.log('❌ No data in SharedPreferences');
+            }
+        } else {
+            console.log('❌ WidgetDataBridgeModule not available!');
+        }
 
         if (stored) {
             // Re-calculate daysUntil to ensure widget is always up to date
-            // even if the app hasn't been opened effectively "auto-updating" the count
             const today = startOfDay(new Date());
             const birthDate = new Date(stored.date);
 
-            const currentYear = today.getFullYear();
-            // Re-calculate main birthday
-            let nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
-            nextBirthday = startOfDay(nextBirthday);
-            if (isBefore(nextBirthday, today)) nextBirthday = addYears(nextBirthday, 1);
-            const daysUntil = differenceInDays(nextBirthday, today);
+            if (!isNaN(birthDate.getTime())) {
+                const currentYear = today.getFullYear();
+                // Re-calculate main birthday
+                let nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+                nextBirthday = startOfDay(nextBirthday);
+                if (isBefore(nextBirthday, today)) nextBirthday = addYears(nextBirthday, 1);
+                const daysUntil = differenceInDays(nextBirthday, today);
 
-            widgetData = {
-                ...stored,
-                daysUntil,
-                // Re-calculate for all upcoming items too
-                upcoming: (stored.upcoming || []).map(u => {
-                    const uDate = new Date(u.date);
-                    let uNext = new Date(currentYear, uDate.getMonth(), uDate.getDate());
-                    uNext = startOfDay(uNext);
-                    if (isBefore(uNext, today)) uNext = addYears(uNext, 1);
-                    return {
-                        ...u,
-                        daysUntil: differenceInDays(uNext, today),
-                        // Also update age if birthday passed
-                        age: uNext.getFullYear() - uDate.getFullYear()
-                    };
-                })
-            };
+                widgetData = {
+                    ...stored,
+                    daysUntil,
+                    // Re-calculate for all upcoming items too
+                    upcoming: (stored.upcoming || []).map(u => {
+                        const uDate = new Date(u.date);
+                        if (isNaN(uDate.getTime())) return u;
 
-            console.log(`Widget successfully updated at ${new Date().toLocaleTimeString()} for ${widgetName}`);
+                        let uNext = new Date(currentYear, uDate.getMonth(), uDate.getDate());
+                        uNext = startOfDay(uNext);
+                        if (isBefore(uNext, today)) uNext = addYears(uNext, 1);
+                        return {
+                            ...u,
+                            daysUntil: differenceInDays(uNext, today),
+                            age: uNext.getFullYear() - uDate.getFullYear()
+                        };
+                    })
+                };
+            } else {
+                widgetData = stored;
+            }
+
+            console.log(`✅ Widget successfully updated at ${new Date().toLocaleTimeString()} for ${widgetName}`);
         } else {
-            console.log('No widget data found in storage');
+            console.log('❌ NO DATA - Will show empty widget');
         }
     } catch (error) {
-        console.error('Widget data load error:', error);
+        console.error('❌ Widget data load error:', error);
     }
 
+    console.log('Widget data status:', widgetData ? '✅ HAS DATA' : '❌ NULL');
+    console.log('=== WIDGET DEBUG END ===');
+
     const renderSelectedWidget = () => {
-        if (!widgetData) return <EmptyBirthdayWidget />;
+        if (!widgetData) {
+            console.log('Rendering EmptyBirthdayWidget');
+            return <EmptyBirthdayWidget />;
+        }
 
         switch (widgetName) {
             case 'BirthdayWidgetSmall':
+                console.log('Rendering SmallBirthdayWidget with data');
                 return <SmallBirthdayWidget {...widgetData} />;
             case 'BirthdayWidgetLarge':
+                console.log('Rendering LargeBirthdayWidget with data');
                 return <LargeBirthdayWidget {...widgetData} />;
             case 'BirthdayWidgetMedium':
             default:
+                console.log('Rendering MediumBirthdayWidget with data');
                 return <MediumBirthdayWidget {...widgetData} />;
         }
     };
