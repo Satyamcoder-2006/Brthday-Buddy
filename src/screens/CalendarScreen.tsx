@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Dimensions, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase, isDemoMode } from '../services/supabase';
@@ -39,7 +39,7 @@ export const CalendarScreen = () => {
                     { id: '3', name: 'Bob Wilson', birthday_date: '1985-11-30', relationship: 'Colleague', notes: 'Tech enthusiast', user_id: 'demo' },
                 ];
                 setBirthdays(mockBirthdays);
-                updateWidgetData(mockBirthdays);
+                updateWidgetData(mockBirthdays as any);
                 setLoading(false);
                 return;
             }
@@ -164,6 +164,14 @@ export const CalendarScreen = () => {
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.brandingHeader}>
+                    <Image source={require('../../assets/icon.png')} style={styles.logo} />
+                    <View style={styles.brandingTextContainer}>
+                        <Text style={styles.appName}>BIRTHDAY BUDDY</Text>
+                        <Text style={styles.appNameSubtitle}>CALENDAR</Text>
+                    </View>
+                </View>
+
                 {renderCalendar()}
             </ScrollView>
 
@@ -221,14 +229,15 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        justifyContent: 'center',
     },
     calendarContainer: {
         padding: spacing.md,
         paddingVertical: spacing.xl,
-        backgroundColor: colors.surface, // Card-like background
+        backgroundColor: colors.surface,
         borderRadius: borderRadius.xl,
-        margin: spacing.md,
+        marginHorizontal: spacing.md,
+        marginBottom: spacing.md,
+        marginTop: spacing.xxl,
         borderWidth: 1,
         borderColor: colors.border,
         shadowColor: "#000",
@@ -334,5 +343,37 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 8,
+    },
+    brandingHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.xl,
+        paddingTop: 30,
+        paddingBottom: spacing.xs,
+        gap: spacing.md,
+    },
+    logo: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: colors.surfaceHighlight,
+    },
+    brandingTextContainer: {
+        justifyContent: 'center',
+    },
+    appName: {
+        color: colors.text,
+        fontSize: 20, // Slightly reduced to fit "BUDDY"
+        fontFamily: typography.fonts.heading,
+        letterSpacing: 2,
+        lineHeight: 24,
+    },
+    appNameSubtitle: {
+        color: colors.primary,
+        fontSize: 10,
+        fontFamily: typography.fonts.medium,
+        letterSpacing: 8, // Increased for a more minimalist look
+        marginTop: -2,
+        textTransform: 'uppercase',
     },
 });

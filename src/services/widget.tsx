@@ -1,7 +1,7 @@
 import { Birthday } from '../types';
 import { differenceInDays, addYears, isBefore, startOfDay } from 'date-fns';
 import { requestWidgetUpdate } from 'react-native-android-widget';
-import { BirthdayWidget, EmptyBirthdayWidget } from '../widgets/BirthdayWidget';
+import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, LargeBirthdayWidget, EmptyBirthdayWidget } from '../widgets/BirthdayWidget';
 import React from 'react';
 import { WidgetStorage } from './WidgetDataBridge';
 
@@ -14,16 +14,17 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         if (birthdays.length === 0) {
             await WidgetStorage.clearWidgetData();
 
-            // Update widget to show "No birthdays"
-            await requestWidgetUpdate({
-                widgetName: 'BirthdayWidget',
-                renderWidget: () => (
-                    <EmptyBirthdayWidget />
-                ),
-                widgetNotFound: () => {
-                    console.log('Birthday widget not found on home screen');
-                }
-            });
+            // Update all widget sizes to show "No birthdays"
+            const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
+            for (const widgetName of widgetSizes) {
+                await requestWidgetUpdate({
+                    widgetName,
+                    renderWidget: () => (
+                        <EmptyBirthdayWidget />
+                    ),
+                    widgetNotFound: () => { }
+                });
+            }
             return;
         }
 
@@ -86,22 +87,27 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         // Save to SharedPreferences (accessible by widget)
         await WidgetStorage.saveWidgetData(widgetData);
 
-        // Trigger updates for all widget sizes
-        const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
+        // Trigger updates for all widget sizes with REAL DATA
+        // This ensures the update is pushed IMMEDIATELY with correct visuals
+        const nextUpProps = { ...widgetData, upcoming: widgetData.upcoming };
 
-        for (const widgetName of widgetSizes) {
-            try {
-                await requestWidgetUpdate({
-                    widgetName,
-                    renderWidget: () => <EmptyBirthdayWidget />, // Placeholder, handler will do real render
-                    widgetNotFound: () => {
-                        // This is expected for sizes not added to home screen
-                    }
-                });
-            } catch (e) {
-                console.log(`Failed to trigger update for ${widgetName}`);
-            }
-        }
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetSmall',
+            renderWidget: () => <SmallBirthdayWidget {...nextUpProps} />,
+            widgetNotFound: () => { }
+        });
+
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetMedium',
+            renderWidget: () => <MediumBirthdayWidget {...nextUpProps} />,
+            widgetNotFound: () => { }
+        });
+
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetLarge',
+            renderWidget: () => <LargeBirthdayWidget {...nextUpProps} />,
+            widgetNotFound: () => { }
+        });
 
     } catch (error) {
         console.error('Failed to update widget data:', error);
@@ -129,17 +135,25 @@ export const refreshWidget = async (): Promise<void> => {
         const data = await WidgetStorage.getWidgetData();
         const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
 
-        for (const widgetName of widgetSizes) {
-            try {
-                await requestWidgetUpdate({
-                    widgetName,
-                    renderWidget: () => <EmptyBirthdayWidget />, // Handler will do real render
-                    widgetNotFound: () => { }
-                });
-            } catch (e) {
-                console.log(`Failed to refresh widget ${widgetName}`);
-            }
-        }
+        const nextUpProps = data ? { ...data, upcoming: data.upcoming } : null;
+
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetSmall',
+            renderWidget: () => nextUpProps ? <SmallBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
+            widgetNotFound: () => { }
+        });
+
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetMedium',
+            renderWidget: () => nextUpProps ? <MediumBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
+            widgetNotFound: () => { }
+        });
+
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetLarge',
+            renderWidget: () => nextUpProps ? <LargeBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
+            widgetNotFound: () => { }
+        });
     } catch (error) {
         console.error('Failed to refresh widgets:', error);
     }

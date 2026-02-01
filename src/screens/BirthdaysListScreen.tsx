@@ -161,22 +161,6 @@ export const BirthdaysListScreen = () => {
             <View style={styles.header}>
                 <View style={styles.topHeader}>
                     <Text style={styles.title}>Birthdays</Text>
-                    <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => {
-                            setBirthdayToEdit(undefined);
-                            setModalVisible(true);
-                        }}
-                    >
-                        <LinearGradient
-                            colors={gradients.primary as any}
-                            style={styles.addButtonGradient}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                        >
-                            <Ionicons name="add" size={24} color="white" />
-                        </LinearGradient>
-                    </TouchableOpacity>
                 </View>
 
                 {!isDemoMode && (
@@ -260,7 +244,7 @@ export const BirthdaysListScreen = () => {
                 onClose={() => setGiftModalVisible(false)}
                 birthday={selectedBirthday}
             />
-        </View>
+        </View >
     );
 };
 

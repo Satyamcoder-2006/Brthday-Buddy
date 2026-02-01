@@ -112,7 +112,7 @@ export const SmallBirthdayWidget = ({ id, name, daysUntil, age }: WidgetProps) =
                 </FlexWidget>
             </FlexWidget>
 
-            <FlexWidget style={{ flex: 1, justifyContent: 'center', width: 'match_parent' }}>
+            <FlexWidget style={{ height: 60, justifyContent: 'center', width: 'match_parent' }}>
                 <TextWidget
                     text={(name || 'BIRTHDAY').toUpperCase()}
                     style={{ fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'sans-serif-medium' }}
@@ -173,7 +173,7 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl 
                     </FlexWidget>
                 </FlexWidget>
 
-                <FlexWidget style={{ flex: 1, justifyContent: 'center', width: 'match_parent' }}>
+                <FlexWidget style={{ flex: 1, justifyContent: 'center', width: 'match_parent', height: 'match_parent' }}>
                     <TextWidget text={(name || 'Birthday').toUpperCase()} style={{ fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', fontFamily: 'sans-serif-medium' }} />
                     <TextWidget text={dateText || ''} style={{ fontSize: 13, color: '#FFFFFFCC', fontWeight: 'bold', fontFamily: 'sans-serif' }} />
                 </FlexWidget>

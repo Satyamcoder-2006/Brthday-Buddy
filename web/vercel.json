@@ -4,5 +4,16 @@
             "source": "/party/:path*",
             "destination": "/index.html"
         }
+    ],
+    "headers": [
+        {
+            "source": "/apk/(.*).apk",
+            "headers": [
+                {
+                    "key": "Content-Type",
+                    "value": "application/vnd.android.package-archive"
+                }
+            ]
+        }
     ]
 }
