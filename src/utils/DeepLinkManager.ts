@@ -51,6 +51,25 @@ export class DeepLinkManager {
     static generateDeepLink(partyId: string): string {
         return `birthdaybuddy://party/${partyId}`;
     }
+
+    /**
+     * Parse password reset deep link
+     */
+    static parsePasswordReset(url: string): boolean {
+        try {
+            const parsed = Linking.parse(url);
+            const path = parsed.path;
+
+            // Handle: birthdaybuddy://reset-password
+            if (path?.includes('reset-password')) {
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to parse reset password link:', error);
+            return false;
+        }
+    }
 }
 
 /**
@@ -65,6 +84,13 @@ export const useDeepLinking = () => {
             const initialUrl = await Linking.getInitialURL();
 
             if (initialUrl) {
+                // Check for password reset
+                if (DeepLinkManager.parsePasswordReset(initialUrl)) {
+                    navigation.navigate('PasswordReset');
+                    return;
+                }
+
+                // Check for party invite
                 const invite = DeepLinkManager.parsePartyInvite(initialUrl);
                 if (invite) {
                     navigation.navigate('PartyDetail', {
@@ -80,6 +106,13 @@ export const useDeepLinking = () => {
 
         // Handle URL when app is already open
         const subscription = Linking.addEventListener('url', (event: { url: string }) => {
+            // Check for password reset
+            if (DeepLinkManager.parsePasswordReset(event.url)) {
+                navigation.navigate('PasswordReset');
+                return;
+            }
+
+            // Check for party invite
             const invite = DeepLinkManager.parsePartyInvite(event.url);
             if (invite) {
                 navigation.navigate('PartyDetail', {

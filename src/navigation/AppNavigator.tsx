@@ -18,6 +18,7 @@ import { GiftRegistryScreen } from '../screens/GiftRegistryScreen';
 import { PartyHostingScreen } from '../screens/PartyHostingScreen';
 import { PartyDetailScreen } from '../screens/PartyDetailScreen';
 import { PartyJoinScreen } from '../screens/PartyJoinScreen';
+import { PasswordResetScreen } from '../screens/PasswordResetScreen';
 import { MainTabParamList, RootStackParamList } from '../types';
 import { colors, spacing, typography } from '../theme';
 import { useDeepLinking } from '../utils/DeepLinkManager';
@@ -93,6 +94,8 @@ const linking: LinkingOptions<RootStackParamList> = {
             PartyHosting: 'party/host',
             BirthdayDetail: 'birthday/:birthdayId',
             SocialShare: 'share/:birthdayId',
+            PasswordReset: 'reset-password',
+            Login: 'login',
         },
     },
 };
@@ -145,9 +148,13 @@ export const AppNavigator = () => {
                         <Stack.Screen name="PartyDetail" component={PartyDetailScreen} />
                         <Stack.Screen name="PartyJoin" component={PartyJoinScreen} />
                         <Stack.Screen name="MyParties" component={MyPartiesScreen} />
+                        <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
                     </>
                 ) : (
-                    <Stack.Screen name="Auth" component={LoginScreen} />
+                    <>
+                        <Stack.Screen name="Auth" component={LoginScreen} />
+                        <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
+                    </>
                 )}
             </Stack.Navigator>
         </NavigationContainer>

@@ -7,6 +7,7 @@ import { RootStackParamList, Party } from '../types';
 import { getParty, submitRSVP, getPartyGuestCount } from '../services/PartyService';
 import { Loading } from '../components/common/Loading';
 import { Button } from '../components/common/Button';
+import { supabase } from '../services/supabase';
 
 type PartyJoinScreenRouteProp = RouteProp<RootStackParamList, 'PartyJoin'>;
 
@@ -25,6 +26,8 @@ export const PartyJoinScreen = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [party, setParty] = useState<Party | null>(null);
     const [currentGuestCount, setCurrentGuestCount] = useState(0);
+    const [isHost, setIsHost] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const [guestName, setGuestName] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
@@ -44,6 +47,19 @@ export const PartyJoinScreen = () => {
             ]);
             setParty(partyData);
             setCurrentGuestCount(guestCount);
+
+            // Check if current user is the host
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && partyData && partyData.host_user_id === user.id) {
+                setIsHost(true);
+            } else if (user) {
+                // Auto-populate guest information for logged-in users
+                setIsLoggedIn(true);
+                const userName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+                const userEmail = user.email || '';
+                setGuestName(userName);
+                setGuestEmail(userEmail);
+            }
         } catch (error: any) {
             Alert.alert('Error', 'Failed to load party information');
         } finally {
@@ -101,6 +117,31 @@ export const PartyJoinScreen = () => {
 
     if (loading) return <Loading />;
     if (!party) return <View style={styles.container}><Text style={styles.errorText}>Party not found</Text></View>;
+
+    // Prevent host from joining their own party
+    if (isHost) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <Ionicons name="close" size={28} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={64} color={colors.warning} />
+                    <Text style={styles.errorTitle}>Cannot Join Own Party</Text>
+                    <Text style={styles.errorMessage}>
+                        You cannot join your own party as you are the host.
+                    </Text>
+                    <Button
+                        title="Go Back"
+                        onPress={() => navigation.goBack()}
+                        style={styles.submitButton}
+                    />
+                </View>
+            </View>
+        );
+    }
 
     const partyDate = new Date(party.party_date);
     const isUpcoming = partyDate > new Date();
@@ -179,25 +220,33 @@ export const PartyJoinScreen = () => {
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Your Name *</Text>
+                    {isLoggedIn && (
+                        <Text style={styles.autoFilledLabel}>✓ Auto-filled from your account</Text>
+                    )}
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isLoggedIn && styles.inputReadOnly]}
                         value={guestName}
                         onChangeText={setGuestName}
                         placeholder="John Doe"
                         placeholderTextColor={colors.textDisabled}
+                        editable={!isLoggedIn}
                     />
                 </View>
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Email Address *</Text>
+                    {isLoggedIn && (
+                        <Text style={styles.autoFilledLabel}>✓ Auto-filled from your account</Text>
+                    )}
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isLoggedIn && styles.inputReadOnly]}
                         value={guestEmail}
                         onChangeText={setGuestEmail}
                         placeholder="john@example.com"
                         placeholderTextColor={colors.textDisabled}
                         keyboardType="email-address"
                         autoCapitalize="none"
+                        editable={!isLoggedIn}
                     />
                 </View>
 
@@ -353,5 +402,34 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: colors.error,
         padding: spacing.xl,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+    },
+    errorTitle: {
+        fontSize: typography.sizes['2xl'],
+        fontWeight: typography.weights.bold,
+        color: colors.text,
+        marginTop: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    errorMessage: {
+        fontSize: typography.sizes.base,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+    },
+    inputReadOnly: {
+        backgroundColor: colors.surface,
+        borderColor: colors.primary,
+        opacity: 0.8,
+    },
+    autoFilledLabel: {
+        fontSize: typography.sizes.xs,
+        color: colors.success,
+        marginBottom: spacing.xs,
     },
 });

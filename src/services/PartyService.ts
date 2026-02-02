@@ -136,6 +136,11 @@ export async function submitRSVP(
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Prevent host from joining their own party
+    if (user && party.host_user_id === user.id) {
+        throw new Error('You cannot join your own party as you are the host.');
+    }
+
     // Check for existing RSVP
     let existingRSVP: PartyInvitation | null = null;
     if (rsvpData.guest_email) {

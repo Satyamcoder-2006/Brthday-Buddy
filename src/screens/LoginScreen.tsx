@@ -138,9 +138,11 @@ export const LoginScreen = () => {
             Alert.alert('Error', 'Please enter your email first');
             return;
         }
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'birthdaybuddy://reset-password',
+        });
         if (error) Alert.alert('Error', error.message);
-        else Alert.alert('Success', 'Password reset email sent');
+        else Alert.alert('Success', 'Password reset email sent. Check your inbox!');
     };
 
     return (

@@ -45,6 +45,7 @@ export interface CalendarMarking {
 
 export type RootStackParamList = {
     Auth: undefined;
+    Login: undefined;
     Main: undefined;
     SocialShare: { birthday: Birthday };
     BirthdayDetail: { birthday: Birthday };
@@ -54,6 +55,7 @@ export type RootStackParamList = {
     PartyDetail: { partyId: string; fromInvite?: boolean; inviterId?: string };
     PartyJoin: { partyId: string };
     MyParties: undefined;
+    PasswordReset: undefined;
 };
 
 export type MainTabParamList = {
