@@ -45,7 +45,9 @@ class Media3TransformerModule : Module() {
         }
 
         // 2. Build Composition
-        val composition = Composition.Builder(sequences).build()
+        // Wrap the list of edited media items into a Sequence
+        val sequence = androidx.media3.transformer.EditedMediaItemSequence(sequences)
+        val composition = Composition.Builder(sequence).build()
 
         // 3. Configure Transformer
         // Convert outputUri (file://...) to absolute path for Transformer
