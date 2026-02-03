@@ -13,6 +13,10 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.File
 
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+
+@OptIn(UnstableApi::class)
 class Media3TransformerModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("Media3Transformer")
