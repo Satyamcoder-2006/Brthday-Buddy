@@ -1,7 +1,7 @@
 import { Birthday } from '../types';
 import { differenceInDays, addYears, isBefore, startOfDay } from 'date-fns';
 import { requestWidgetUpdate } from 'react-native-android-widget';
-import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, LargeBirthdayWidget, EmptyBirthdayWidget } from '../widgets/BirthdayWidget';
+import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, EmptyBirthdayWidget } from '../widgets/BirthdayWidget';
 import React from 'react';
 import { WidgetStorage } from './WidgetDataBridge';
 
@@ -14,8 +14,8 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         if (birthdays.length === 0) {
             await WidgetStorage.clearWidgetData();
 
-            // Update all widget sizes to show "No birthdays"
-            const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
+            // Update only Small and Medium widgets to show "No birthdays"
+            const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium'];
             for (const widgetName of widgetSizes) {
                 await requestWidgetUpdate({
                     widgetName,
@@ -58,6 +58,7 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
                 ...birthday,
                 daysUntil,
                 turningAge,
+                birthYear,
                 nextBirthday
             };
         });
@@ -66,46 +67,58 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
 
         const nextUp = upcomingBirthdays[0];
+        const birthDate = new Date(nextUp.birthday_date);
 
+        // New data structure with birthdayDate and birthYear
         const widgetData = {
+            nextBirthday: {
+                id: nextUp.id,
+                name: nextUp.name,
+                birthdayDate: nextUp.birthday_date, // Full date for recalculation
+                birthYear: birthDate.getFullYear(),
+                avatarUrl: nextUp.avatar_url,
+                daysUntil: nextUp.daysUntil,
+                turningAge: nextUp.turningAge,
+                lastCalculated: new Date().toISOString()
+            },
+            upcomingBirthdays: upcomingBirthdays.slice(0, 5).map(b => ({
+                id: b.id,
+                name: b.name,
+                birthdayDate: b.birthday_date,
+                birthYear: new Date(b.birthday_date).getFullYear(),
+                avatarUrl: b.avatar_url,
+                daysUntil: b.daysUntil,
+                turningAge: b.turningAge,
+                lastCalculated: new Date().toISOString()
+            })),
+            version: "1.0",
+            lastUpdated: new Date().toISOString()
+        };
+
+        // Save to SharedPreferences (accessible by widget and midnight receiver)
+        await WidgetStorage.saveWidgetData(widgetData);
+
+        // Trigger updates for the main Widget
+        const nextUpProps = {
             id: nextUp.id,
             name: nextUp.name,
             daysUntil: nextUp.daysUntil,
             date: nextUp.birthday_date,
             age: nextUp.turningAge,
-            lastUpdated: new Date().toISOString(),
-            upcoming: upcomingBirthdays.slice(0, 5).map(b => ({
+            photoUrl: nextUp.avatar_url,
+            upcoming: widgetData.upcomingBirthdays.map(b => ({
                 id: b.id,
                 name: b.name,
                 daysUntil: b.daysUntil,
-                date: b.birthday_date,
+                date: b.birthdayDate,
                 age: b.turningAge,
-                photoUrl: b.avatar_url
+                photoUrl: b.avatarUrl
             }))
         };
 
-        // Save to SharedPreferences (accessible by widget)
-        await WidgetStorage.saveWidgetData(widgetData);
-
-        // Trigger updates for all widget sizes with REAL DATA
-        // This ensures the update is pushed IMMEDIATELY with correct visuals
-        const nextUpProps = { ...widgetData, upcoming: widgetData.upcoming };
-
         await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetSmall',
-            renderWidget: () => <SmallBirthdayWidget {...nextUpProps} />,
-            widgetNotFound: () => { }
-        });
-
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetMedium',
+            widgetName: 'BirthdayWidget',
             renderWidget: () => <MediumBirthdayWidget {...nextUpProps} />,
-            widgetNotFound: () => { }
-        });
-
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetLarge',
-            renderWidget: () => <LargeBirthdayWidget {...nextUpProps} />,
             widgetNotFound: () => { }
         });
 
@@ -133,27 +146,42 @@ export const getWidgetData = async () => {
 export const refreshWidget = async (): Promise<void> => {
     try {
         const data = await WidgetStorage.getWidgetData();
-        const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium', 'BirthdayWidgetLarge'];
 
-        const nextUpProps = data ? { ...data, upcoming: data.upcoming } : null;
+        if (!data || !data.nextBirthday) {
+            // No data, show empty widgets
+            await requestWidgetUpdate({
+                widgetName: 'BirthdayWidget',
+                renderWidget: () => <EmptyBirthdayWidget />,
+                widgetNotFound: () => { }
+            });
+            return;
+        }
+
+        const nextUpProps = {
+            id: data.nextBirthday.id,
+            name: data.nextBirthday.name,
+            daysUntil: data.nextBirthday.daysUntil,
+            date: data.nextBirthday.birthdayDate,
+            age: data.nextBirthday.turningAge,
+            photoUrl: data.nextBirthday.avatarUrl,
+            upcoming: data.upcomingBirthdays.map(b => ({
+                id: b.id,
+                name: b.name,
+                daysUntil: b.daysUntil,
+                date: b.birthdayDate,
+                age: b.turningAge,
+                photoUrl: b.avatarUrl
+            }))
+        };
 
         await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetSmall',
-            renderWidget: () => nextUpProps ? <SmallBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
+            widgetName: 'BirthdayWidget',
+            renderWidget: () => <MediumBirthdayWidget {...nextUpProps} />,
             widgetNotFound: () => { }
         });
 
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetMedium',
-            renderWidget: () => nextUpProps ? <MediumBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
-            widgetNotFound: () => { }
-        });
+        // Large widget removed
 
-        await requestWidgetUpdate({
-            widgetName: 'BirthdayWidgetLarge',
-            renderWidget: () => nextUpProps ? <LargeBirthdayWidget {...nextUpProps} /> : <EmptyBirthdayWidget />,
-            widgetNotFound: () => { }
-        });
     } catch (error) {
         console.error('Failed to refresh widgets:', error);
     }

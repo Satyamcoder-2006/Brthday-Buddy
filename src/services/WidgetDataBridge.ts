@@ -1,21 +1,22 @@
 import WidgetDataBridgeModule from '../../modules/widget-data-bridge';
 
-// Data interface
-export interface WidgetData {
-    id: string; // Next birthday ID
+// Data interface for widget storage
+export interface WidgetBirthdayData {
+    id: string;
     name: string;
+    birthdayDate: string; // "YYYY-MM-DD" format - CRITICAL for recalculation
+    birthYear: number; // Birth year for age calculation
+    avatarUrl?: string;
     daysUntil: number;
-    date: string;
-    age: number;
-    lastUpdated: string;
-    upcoming?: {
-        id: string;
-        name: string;
-        daysUntil: number;
-        date: string;
-        age: number;
-        photoUrl?: string;
-    }[];
+    turningAge: number;
+    lastCalculated: string; // ISO timestamp of last calculation
+}
+
+export interface WidgetData {
+    nextBirthday: WidgetBirthdayData;
+    upcomingBirthdays: WidgetBirthdayData[];
+    version: string; // For future data migrations
+    lastUpdated: string; // ISO timestamp
 }
 
 export const WidgetStorage = {

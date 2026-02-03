@@ -8,6 +8,7 @@ import { registerForPushNotificationsAsync } from './src/services/notifications'
 import { useFonts, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Loading } from './src/components/common/Loading';
+import { useWidgetSync } from './src/hooks/useWidgetSync';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -21,6 +22,9 @@ export default function App() {
     registerForPushNotificationsAsync();
     registerBackgroundFetchAsync().catch(err => console.log(err));
   }, []);
+
+  // Auto-sync widgets on app launch and when returning to foreground
+  useWidgetSync();
 
   if (!fontsLoaded) {
     return <Loading />;

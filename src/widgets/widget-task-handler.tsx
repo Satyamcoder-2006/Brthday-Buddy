@@ -1,6 +1,6 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, LargeBirthdayWidget, EmptyBirthdayWidget } from './BirthdayWidget';
+import { BirthdayWidget, SmallBirthdayWidget, MediumBirthdayWidget, EmptyBirthdayWidget } from './BirthdayWidget';
 import { differenceInDays, startOfDay, addYears, isBefore } from 'date-fns';
 
 // Import NativeModules to access SharedPreferences
@@ -39,10 +39,14 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
             console.log('❌ WidgetDataBridgeModule not available!');
         }
 
-        if (stored) {
+        if (stored && stored.nextBirthday) {
+            // New Data Structure Logic
+            const nextBirthdayData = stored.nextBirthday;
+
             // Re-calculate daysUntil to ensure widget is always up to date
             const today = startOfDay(new Date());
-            const birthDate = new Date(stored.date);
+            const birthDateStr = nextBirthdayData.birthdayDate;
+            const birthDate = new Date(birthDateStr);
 
             if (!isNaN(birthDate.getTime())) {
                 const currentYear = today.getFullYear();
@@ -53,25 +57,41 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
                 const daysUntil = differenceInDays(nextBirthday, today);
 
                 widgetData = {
-                    ...stored,
-                    daysUntil,
+                    id: nextBirthdayData.id,
+                    name: nextBirthdayData.name,
+                    daysUntil: daysUntil, // Use recalculated value
+                    date: nextBirthdayData.birthdayDate,
+                    age: nextBirthday.getFullYear() - nextBirthdayData.birthYear,
+                    photoUrl: nextBirthdayData.avatarUrl,
                     // Re-calculate for all upcoming items too
-                    upcoming: (stored.upcoming || []).map(u => {
-                        const uDate = new Date(u.date);
+                    upcoming: (stored.upcomingBirthdays || []).map(u => {
+                        const uDate = new Date(u.birthdayDate);
                         if (isNaN(uDate.getTime())) return u;
 
                         let uNext = new Date(currentYear, uDate.getMonth(), uDate.getDate());
                         uNext = startOfDay(uNext);
                         if (isBefore(uNext, today)) uNext = addYears(uNext, 1);
                         return {
-                            ...u,
+                            id: u.id,
+                            name: u.name,
                             daysUntil: differenceInDays(uNext, today),
-                            age: uNext.getFullYear() - uDate.getFullYear()
+                            date: u.birthdayDate,
+                            age: uNext.getFullYear() - u.birthYear,
+                            photoUrl: u.avatarUrl
                         };
                     })
                 };
             } else {
-                widgetData = stored;
+                // Fallback if date is invalid, though shouldn't happen
+                widgetData = {
+                    id: nextBirthdayData.id,
+                    name: nextBirthdayData.name,
+                    daysUntil: nextBirthdayData.daysUntil,
+                    date: nextBirthdayData.birthdayDate,
+                    age: nextBirthdayData.turningAge,
+                    photoUrl: nextBirthdayData.avatarUrl,
+                    upcoming: stored.upcomingBirthdays
+                };
             }
 
             console.log(`✅ Widget successfully updated at ${new Date().toLocaleTimeString()} for ${widgetName}`);
@@ -92,12 +112,12 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         }
 
         switch (widgetName) {
+            case 'BirthdayWidget':
+                console.log('Rendering BirthdayWidget (Medium) with data');
+                return <MediumBirthdayWidget {...widgetData} />;
             case 'BirthdayWidgetSmall':
                 console.log('Rendering SmallBirthdayWidget with data');
                 return <SmallBirthdayWidget {...widgetData} />;
-            case 'BirthdayWidgetLarge':
-                console.log('Rendering LargeBirthdayWidget with data');
-                return <LargeBirthdayWidget {...widgetData} />;
             case 'BirthdayWidgetMedium':
             default:
                 console.log('Rendering MediumBirthdayWidget with data');

@@ -36,10 +36,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             foregroundImage: "./assets/adaptive-icon.png",
             backgroundColor: "#000000"
         },
-        package: "com.yourcompany.birthdaybuddy",
+        package: "com.satyam.birthdaybuddy",
         permissions: [
             "RECEIVE_BOOT_COMPLETED",
             "SCHEDULE_EXACT_ALARM",
+            "USE_EXACT_ALARM",
             "POST_NOTIFICATIONS",
             "READ_CALENDAR",
             "WRITE_CALENDAR",
@@ -102,40 +103,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             }
         ],
         "@react-native-community/datetimepicker",
-        [
-            "react-native-android-widget",
-            {
-                "widgets": [
-                    {
-                        "name": "BirthdayWidgetSmall",
-                        "minWidth": "110dp",
-                        "minHeight": "110dp",
-                        "targetCellWidth": 2,
-                        "targetCellHeight": 2,
-                        "description": "Minimal birthday countdown",
-                        "updatePeriodMillis": 1800000
-                    },
-                    {
-                        "name": "BirthdayWidgetMedium",
-                        "minWidth": "250dp",
-                        "minHeight": "110dp",
-                        "targetCellWidth": 4,
-                        "targetCellHeight": 2,
-                        "description": "Birthday info with quick actions",
-                        "updatePeriodMillis": 1800000
-                    },
-                    {
-                        "name": "BirthdayWidgetLarge",
-                        "minWidth": "250dp",
-                        "minHeight": "250dp",
-                        "targetCellWidth": 4,
-                        "targetCellHeight": 4,
-                        "description": "List of upcoming birthdays",
-                        "updatePeriodMillis": 1800000
-                    }
-                ]
-            }
-        ]
+
+        // Widget plugin removed as we are using manual native setup in android/ folder
+        // "react-native-android-widget"
     ],
     extra: {
         supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
