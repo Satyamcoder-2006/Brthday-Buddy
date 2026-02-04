@@ -173,7 +173,7 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl 
                 borderColor: isToday ? accentColor : '#333333',
                 borderWidth: 1
             }}>
-                {photoUrl ? (
+                {photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('https')) ? (
                     <ImageWidget image={{ uri: photoUrl } as any} imageWidth={64} imageHeight={64} style={{ width: 64, height: 64, borderRadius: 32 }} />
                 ) : (
                     <TextWidget text={(name || '?').charAt(0).toUpperCase()} style={{ fontSize: 24, fontWeight: 'bold', color: isToday ? accentColor : '#FFFFFF' }} />
