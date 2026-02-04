@@ -12,7 +12,7 @@
 
 *Never forget a special moment again.*
 
-[Features](#-features) • [Architecture](#%EF%B8%8F-architecture) • [Installation](#-installation--setup) • [Technical Deep Dive](#-technical-deep-dive) • [Roadmap](#%EF%B8%8F-roadmap)
+[Features](#-features) • [Architecture](#%EF%B8%8F-architecture) • [Installation](#-installation--setup) • [Technical Deep Dive](#-technical-deep-dive) 
 
 </div>
 
@@ -29,7 +29,6 @@
 - [Performance Optimizations](#-performance-optimizations)
 - [Security & Privacy](#-security--privacy)
 - [Testing Strategy](#-testing-strategy)
-- [Roadmap](#%EF%B8%8F-roadmap)
 - [Contributing](#-contributing)
 
 ---
@@ -121,7 +120,42 @@ const streamGiftSuggestions = async (context: PersonContext) => {
   // ... SSE parsing logic
 };
 ```
+### 🤖 AI Gift Recommendation Engine (Updated – Multi-Provider Strategy)
 
+**Challenge**: Single-provider dependency created rate-limit bottlenecks, downtime risks, and inconsistent performance across tasks.
+
+**Solution**: Introduced a **Mistral-First Intelligence** architecture with automatic failover.
+
+- **Primary AI**: **Mistral AI** (7B / 8x7B models) — chosen for superior reasoning, faster responses, and excellent OCR/vision capabilities
+  - `MistralGiftService`: Handles gift recommendations and context-aware prompting
+  - `MistralOCRService`: Extracts birthdays from images, PDFs, screenshots, handwritten notes, etc.
+- **Failover AI**: **Google Gemini 1.5** — remains as a robust backup for redundancy
+- **Hybrid Intelligence Architecture**:
+  - Intelligent provider routing in `ai.ts` abstraction layer
+  - Prioritizes Mistral for most requests (better speed & cost)
+  - Automatically falls back to Gemini on:
+    - Rate limit / quota errors
+    - API timeouts
+    - Unexpected response formats
+  - Ensures **100% AI uptime** even during provider outages
+- **Enhanced OCR**: Mistral Vision/OCR now powers document & image import — faster and more accurate than previous Gemini-only approach.
+
+**Implementation Highlights** (abstraction layer example):
+```typescript
+// ai.ts – Provider abstraction with fallback
+async function callAI(prompt: string, options: AIConfig) {
+  try {
+    // Try Mistral first (primary)
+    return await mistralClient.generate(prompt, options);
+  } catch (err) {
+    if (isRateLimitError(err) || isTimeoutError(err)) {
+      console.warn("Mistral failed, falling back to Gemini");
+      return await geminiClient.generate(prompt, options);
+    }
+    throw err;
+  }
+}
+```
 ### 🏠 Native Android Widgets
 
 <div align="center">
@@ -205,26 +239,46 @@ const GlitchCyberTheme: CardTheme = {
   effects: { glitch: { intensity: 0.3, frequency: 2000 } }
 };
 ```
+### 📸 Visual-to-Data Import (OCR Pipeline)
 
-### 🎥 Video Export Pipeline (Beta)
+**Description**  
+A powerful new import feature that turns photos, screenshots, handwritten notes, old lists, or scanned documents into structured birthday entries — no manual typing required.
 
-**Challenge**: Rendering animated birthday videos on mobile devices without native video editing capabilities.
+**How it works**  
+- Accepts raw images (via camera, gallery, or document picker)  
+- Uses **Mistral Vision** (primary) for high-accuracy OCR and multimodal text extraction  
+- Applies specialized prompt engineering to intelligently parse irregular, human-written date formats such as:  
+  - "Oct 12th"  
+  - "10/12/90"  
+  - "12 October"  
+  - "born on the 5th of June"  
+  - "July twenty-third nineteen eighty-seven"  
+- Normalizes all recognized dates into clean **ISO-8601** format (`YYYY-MM-DD`) for reliable storage and calculations  
+- Smart name/date separation + fuzzy matching to avoid duplicates  
+- Preview & confirm screen lets users review and correct extractions before saving
 
-**Our Approach**: Custom FFmpeg integration with Media3 for hardware-accelerated encoding
+**Key Technical Details**  
+- **Mistral Vision** primary OCR engine (with Gemini 1.5 fallback)  
+- Context-aware prompt chain: first extracts raw text → then parses names & dates → finally structures output as JSON  
+- Handles edge cases: abbreviations, ordinal numbers, partial years, mixed formats in one image  
+- Privacy-focused: processes sensitive images with user consent, minimal data sent to AI
 
-- **Frame Generation**: Pre-render 60fps animation frames using React Native Skia
-- **Audio Mixing**: Combine background music with text-to-speech birthday greetings
-- **Native Module**: Custom C++ bridge to FFmpeg for video encoding
-- **Progress Tracking**: Real-time encoding progress with cancellation support
-- **Format Support**: MP4 (H.264) with AAC audio, optimized for social media
-
-**Currently in Beta**: The export button is visible but feature is being stabilized for production.
-
-**Technical Stack**:
-```
-React Native → Skia Canvas → Frame Buffer → Native Module → FFmpeg → MP4
-```
-
+**Example Prompt Snippet** (simplified)
+```text
+You are an expert at extracting personal information from images.
+From the following text content or image description, extract:
+- Full names of people
+- Their birth dates (in any format)
+Convert all dates to ISO-8601 (YYYY-MM-DD).
+Handle common informal formats like "Oct 12th", "12/10/95", "born 5 June", etc.
+Ignore unrelated text.
+Output strict JSON:
+{
+  "entries": [
+    {"name": "John Doe", "date": "1990-05-15", "confidence": 0.95},
+    ...
+  ]
+}
 ### 🔔 Advanced Notification System
 
 <div align="center">
@@ -286,6 +340,40 @@ CREATE POLICY "Users can CRUD their own birthdays"
   FOR ALL
   USING (auth.uid() = user_id);
 ```
+### 🎉 Collaborative Party Suite (New in v1.1+)
+
+**Host a Party**
+- Users can now create dedicated **Party Hubs** for any birthday celebration — turning Birthday Buddy from a personal reminder tool into a full celebration coordinator.
+- Key features:
+  - Set party date, time, location/notes, and guest limits
+  - Manage RSVP statuses (Accepted / Declined / Maybe)
+  - Real-time guest list updates
+  - Optional shared gift ideas and planning notes
+- **Technical Detail**: Powered by **Supabase Realtime** subscriptions for live RSVP changes.  
+  Row-Level Security (RLS) ensures:
+  - Only the host (party creator) can edit party details
+  - Guests can only view the party and submit their own RSVP
+  ```sql
+  -- Example RLS policy (simplified)
+  CREATE POLICY "Hosts can manage parties"
+    ON parties FOR ALL
+    USING (auth.uid() = created_by);
+
+  CREATE POLICY "Guests can view and RSVP"
+    ON parties FOR SELECT, UPDATE (rsvp_status)
+    USING (auth.uid() = ANY(guest_ids));
+
+  Join a Party (Frictionless Deep Linking)
+
+Guests receive shareable invitation links that open directly in the app.
+Custom URL scheme: birthdaybuddy://party/[party_id]
+Implementation:
+Invitation Link Generator creates both deep-link URLs and fallback web previews
+Handles seamless auth transition (sign-in → RSVP if not logged in)
+Uses React Navigation deep linking + Expo Linking to route directly to the RSVP screen
+
+Result: Minimal friction — tap link → see party → RSVP in seconds.
+
 
 ---
 
@@ -530,7 +618,40 @@ Be specific, creative, and avoid generic suggestions like "gift cards."
 - Native module for heavy computations
 
 ---
+### 6.🔗 Deep Linking
 
+Birthday Buddy uses **deep linking** (`birthdaybuddy://`) for seamless navigation from external sources (emails, invitations, shares).
+
+**Setup**:
+- Custom scheme defined in `app.json`: `"scheme": "birthdaybuddy"`
+- React Navigation handles routing via `linking` config:
+  ```typescript
+  const linking = {
+    prefixes: [Linking.createURL('/'), 'https://birthdaybuddy.com'],
+    config: {
+      screens: {
+        PartyHub: 'party/:partyId',
+        ResetPassword: 'reset-password',
+        VerifyEmail: 'verify-email',
+      },
+    },
+  };
+Key Use Cases:
+
+Party Invitations
+Link: birthdaybuddy://party/[partyId]
+Clicking opens the app directly to the Party Hub screen
+Fetches party details in real-time (Supabase Realtime)
+Guests can RSVP instantly; unauthenticated users are prompted to sign in first
+
+Authentication Flows (Password Reset, Magic Links, Email Verification)
+Supabase redirect URL: birthdaybuddy://reset-password (or /verify-email)
+Email link opens app → parses token from URL fragment/query
+Calls supabase.auth.verifyOtp() → completes recovery or verification
+Auto-logs in and redirects to home
+
+
+Benefits: No copy-pasting tokens, native feel, works whether app is closed or in background.
 ## 📦 Installation & Setup
 
 ### Prerequisites
@@ -921,65 +1042,6 @@ describe('BirthdayCard Component', () => {
 
 ---
 
-## 🗺️ Roadmap
-
-### v1.1 (Next Release - March 2024)
-
-**Critical Bug Fixes**:
-- ✅ Widget dimension error (Fixed in v1.0.1)
-- 🔄 Video export stability improvements
-- 🔄 Media3 native module registration
-
-**Features**:
-- [ ] **iOS Widget Support**: Using WidgetKit
-- [ ] **Recurring Gift Suggestions**: AI remembers past gifts and suggests new ones
-- [ ] **Birthday Countdown Wallpaper**: Dynamic home screen wallpaper
-- [ ] **Import from Contacts**: One-tap import of birthdays from phone contacts
-- [ ] **Multi-language Support**: Spanish, French, German, Hindi
-
-**Performance**:
-- [ ] Reduce app startup time from 2.3s to <1.5s
-- [ ] Implement incremental SQLite sync (reduce data transfer by 60%)
-- [ ] Add service worker for web version
-
-### v1.2 (Q2 2024)
-
-**Social Features**:
-- [ ] **Birthday Groups**: Create friend/family groups
-- [ ] **Gift Pooling**: Coordinate group gifts with payment tracking
-- [ ] **Shared Calendars**: View birthdays from multiple users
-- [ ] **Birthday Reminders for Others**: Send reminders to friends
-
-**AI Enhancements**:
-- [ ] **Voice-Based Gift Search**: "Find a gift for my mom who loves gardening"
-- [ ] **Image Recognition**: Upload photo → AI suggests themed gifts
-- [ ] **Budget Optimization**: Track gift spending, get suggestions within budget
-
-### v2.0 (Q3 2024)
-
-**Platform Expansion**:
-- [ ] **Web Dashboard**: Manage birthdays from desktop
-- [ ] **Chrome Extension**: Quick add from browser
-- [ ] **Smartwatch App**: Glanceable notifications on Wear OS/watchOS
-
-**Enterprise Features**:
-- [ ] **Team Mode**: Manage birthdays for entire company
-- [ ] **Slack/Teams Integration**: Birthday notifications in workspace
-- [ ] **Analytics Dashboard**: Gift budget tracking, celebration insights
-
-**Advanced AI**:
-- [ ] **Event Planning Assistant**: Suggest party venues, catering, activities
-- [ ] **Automated Card Design**: AI-generated personalized cards
-- [ ] **Conversation Starter Generator**: What to write in birthday messages
-
-### Long-term Vision (2025+)
-
-- **AR Birthday Cards**: Scan card with camera to see 3D animation
-- **Blockchain Certificates**: NFT-based birthday memories
-- **VR Party Spaces**: Host virtual birthday celebrations
-- **AI Avatar Greetings**: Personalized video messages from AI
-
----
 
 ## 🐛 Known Issues & Limitations
 
