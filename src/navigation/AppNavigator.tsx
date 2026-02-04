@@ -78,7 +78,7 @@ const MainTabs = () => {
 };
 
 const linking: LinkingOptions<RootStackParamList> = {
-    prefixes: ['birthdaybuddy://', 'https://birthdaybuddy.app'],
+    prefixes: ['birthdaybuddy://', 'com.satyam.birthdaybuddy://', 'https://birthdaybuddy.app'],
     config: {
         screens: {
             Main: {

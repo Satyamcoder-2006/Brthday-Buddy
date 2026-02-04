@@ -139,7 +139,7 @@ export const LoginScreen = () => {
             return;
         }
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: 'birthdaybuddy://reset-password',
+            redirectTo: 'com.satyam.birthdaybuddy://reset-password',
         });
         if (error) Alert.alert('Error', error.message);
         else Alert.alert('Success', 'Password reset email sent. Check your inbox!');

@@ -42,7 +42,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="birthdaybuddy"/>
-        <data android:scheme="exp+birthday-buddy"/>
+        <data android:scheme="com.satyam.birthdaybuddy"/>
       </intent-filter>
     </activity>
     
@@ -62,12 +62,22 @@
         </intent-filter>
     </receiver>
 
-    <receiver android:name=".widget.BirthdayWidget" android:exported="false" android:label="Next Birthday">
+    <!-- Medium Widget (4x2) -->
+    <receiver android:name=".widget.BirthdayWidget" android:exported="false" android:label="Birthday Countdown (Medium)">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
         <action android:name="com.satyam.birthdaybuddy.WIDGET_CLICK"/>
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_birthdaywidget"/>
+    </receiver>
+
+    <!-- Small Widget (2x2) -->
+    <receiver android:name=".widget.BirthdayWidgetSmall" android:exported="false" android:label="Birthday Countdown (Small)">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="com.satyam.birthdaybuddy.WIDGET_CLICK"/>
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_birthdaywidget_small"/>
     </receiver>
   </application>
 </manifest>

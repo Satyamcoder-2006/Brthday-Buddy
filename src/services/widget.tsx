@@ -14,8 +14,8 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
         if (birthdays.length === 0) {
             await WidgetStorage.clearWidgetData();
 
-            // Update only Small and Medium widgets to show "No birthdays"
-            const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidgetMedium'];
+            // Update both Small and Medium widgets to show "No birthdays"
+            const widgetSizes = ['BirthdayWidgetSmall', 'BirthdayWidget'];
             for (const widgetName of widgetSizes) {
                 await requestWidgetUpdate({
                     widgetName,
@@ -116,9 +116,17 @@ export const updateWidgetData = async (birthdays: Birthday[]): Promise<void> => 
             }))
         };
 
+        // Update medium widget
         await requestWidgetUpdate({
             widgetName: 'BirthdayWidget',
             renderWidget: () => <MediumBirthdayWidget {...nextUpProps} />,
+            widgetNotFound: () => { }
+        });
+
+        // Update small widget
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetSmall',
+            renderWidget: () => <SmallBirthdayWidget {...nextUpProps} />,
             widgetNotFound: () => { }
         });
 
@@ -148,12 +156,15 @@ export const refreshWidget = async (): Promise<void> => {
         const data = await WidgetStorage.getWidgetData();
 
         if (!data || !data.nextBirthday) {
-            // No data, show empty widgets
-            await requestWidgetUpdate({
-                widgetName: 'BirthdayWidget',
-                renderWidget: () => <EmptyBirthdayWidget />,
-                widgetNotFound: () => { }
-            });
+            // No data, show empty widgets for both sizes
+            const widgetSizes = ['BirthdayWidget', 'BirthdayWidgetSmall'];
+            for (const widgetName of widgetSizes) {
+                await requestWidgetUpdate({
+                    widgetName,
+                    renderWidget: () => <EmptyBirthdayWidget />,
+                    widgetNotFound: () => { }
+                });
+            }
             return;
         }
 
@@ -174,13 +185,19 @@ export const refreshWidget = async (): Promise<void> => {
             }))
         };
 
+        // Update medium widget
         await requestWidgetUpdate({
             widgetName: 'BirthdayWidget',
             renderWidget: () => <MediumBirthdayWidget {...nextUpProps} />,
             widgetNotFound: () => { }
         });
 
-        // Large widget removed
+        // Update small widget
+        await requestWidgetUpdate({
+            widgetName: 'BirthdayWidgetSmall',
+            renderWidget: () => <SmallBirthdayWidget {...nextUpProps} />,
+            widgetNotFound: () => { }
+        });
 
     } catch (error) {
         console.error('Failed to refresh widgets:', error);

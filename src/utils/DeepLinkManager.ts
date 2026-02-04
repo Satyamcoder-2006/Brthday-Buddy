@@ -61,6 +61,7 @@ export class DeepLinkManager {
             const path = parsed.path;
 
             // Handle: birthdaybuddy://reset-password
+            // Handle: com.satyam.birthdaybuddy://reset-password
             if (path?.includes('reset-password')) {
                 return true;
             }

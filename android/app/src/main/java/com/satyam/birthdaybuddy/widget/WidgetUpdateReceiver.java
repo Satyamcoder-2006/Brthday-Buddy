@@ -87,16 +87,30 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
             editor.putString("widgetData", widgetData.toString());
             editor.apply();
             
-            // Trigger widget re-render
+            // Trigger widget re-render for both medium and small widgets
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            ComponentName thisWidget = new ComponentName(context, BirthdayWidget.class);
-            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
-            
-            // Notify the widget provider that data has changed
-            Intent intent = new Intent(context, BirthdayWidget.class);
-            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-            context.sendBroadcast(intent);
+
+            // Update medium widget
+            ComponentName mediumWidget = new ComponentName(context, BirthdayWidget.class);
+            int[] mediumWidgetIds = appWidgetManager.getAppWidgetIds(mediumWidget);
+            if (mediumWidgetIds.length > 0) {
+                Intent mediumIntent = new Intent(context, BirthdayWidget.class);
+                mediumIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                mediumIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, mediumWidgetIds);
+                context.sendBroadcast(mediumIntent);
+                Log.d(TAG, "Updated " + mediumWidgetIds.length + " medium widgets");
+            }
+
+            // Update small widget
+            ComponentName smallWidget = new ComponentName(context, BirthdayWidgetSmall.class);
+            int[] smallWidgetIds = appWidgetManager.getAppWidgetIds(smallWidget);
+            if (smallWidgetIds.length > 0) {
+                Intent smallIntent = new Intent(context, BirthdayWidgetSmall.class);
+                smallIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                smallIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallWidgetIds);
+                context.sendBroadcast(smallIntent);
+                Log.d(TAG, "Updated " + smallWidgetIds.length + " small widgets");
+            }
             
             
         } catch (Exception e) {
