@@ -152,8 +152,26 @@ export const AppNavigator = () => {
                     </>
                 ) : (
                     <>
-                        <Stack.Screen name="Auth" component={LoginScreen} />
-                        <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
+                        <Stack.Screen
+                            name="Auth"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="Login"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="PasswordReset"
+                            component={PasswordResetScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Reset Password',
+                                headerStyle: { backgroundColor: colors.surface },
+                                headerTintColor: colors.text,
+                            }}
+                        />
                     </>
                 )}
             </Stack.Navigator>

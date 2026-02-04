@@ -62,13 +62,21 @@ export class DeepLinkManager {
             console.log('📋 Parsed URL:', JSON.stringify(parsed, null, 2));
             const path = parsed.path;
             const hostname = parsed.hostname;
+            const queryParams = parsed.queryParams;
 
-            // Handle: birthdaybuddy://reset-password
-            // Handle: com.satyam.birthdaybuddy://reset-password
-            // Handle: https://birthdaybuddy.app/reset-password
+            // Supabase sends URLs like:
+            // com.satyam.birthdaybuddy://reset-password#access_token=xxx&type=recovery
+            // OR
+            // com.satyam.birthdaybuddy://reset-password?access_token=xxx&type=recovery
 
-            const isResetPassword = path?.includes('reset-password') || hostname?.includes('reset-password');
-            console.log('✅ Is password reset?', isResetPassword);
+            // Check if URL contains reset-password in path or hostname
+            const hasResetPasswordPath = path?.includes('reset-password') || hostname?.includes('reset-password');
+
+            // Check if it's a recovery type (Supabase adds type=recovery for password reset)
+            const isRecoveryType = queryParams?.type === 'recovery' || url.includes('type=recovery');
+
+            const isResetPassword = hasResetPasswordPath || isRecoveryType;
+            console.log('✅ Is password reset?', isResetPassword, '(path:', hasResetPasswordPath, ', recovery:', isRecoveryType, ')');
 
             if (isResetPassword) {
                 return true;
