@@ -154,61 +154,61 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl 
     return (
         <GradientContainer
             isToday={isToday}
-            style={{ borderRadius: 20, padding: 16, flexDirection: 'row' }}
+            style={{ borderRadius: 16, padding: 12, flexDirection: 'row', height: 110, width: 250 }}
             clickAction="OPEN_URI"
             clickActionData={{ uri: `birthdaybuddy://birthday/${id}` }}
         >
             {/* Avatar with Profile Photo */}
             <FlexWidget style={{
-                width: 72, height: 72, borderRadius: 36,
-                backgroundColor: '#2A2A2A', // Darker placeholder bg
-                marginRight: 18,
-                justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+                width: 64, height: 64, borderRadius: 32,
+                backgroundColor: '#2A2A2A',
+                marginRight: 12,
+                justifyContent: 'center', alignItems: 'center',
                 borderColor: isToday ? accentColor : '#333333',
                 borderWidth: 1
             }}>
                 {photoUrl ? (
-                    <ImageWidget image={{ uri: photoUrl } as any} imageWidth={72} imageHeight={72} style={{ width: 72, height: 72, borderRadius: 36 }} />
+                    <ImageWidget image={{ uri: photoUrl } as any} imageWidth={64} imageHeight={64} style={{ width: 64, height: 64, borderRadius: 32 }} />
                 ) : (
-                    <TextWidget text={(name || '?').charAt(0).toUpperCase()} style={{ fontSize: 28, fontWeight: 'bold', color: isToday ? accentColor : '#FFFFFF' }} />
+                    <TextWidget text={(name || '?').charAt(0).toUpperCase()} style={{ fontSize: 24, fontWeight: 'bold', color: isToday ? accentColor : '#FFFFFF' }} />
                 )}
             </FlexWidget>
 
             {/* Info */}
             <FlexWidget style={{ flex: 1, justifyContent: 'center' }}>
-                <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                <FlexWidget style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
                     <FlexWidget style={{
                         backgroundColor: isToday ? accentColor : '#2A2A2A',
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderRadius: 8,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 6,
                         borderColor: isToday ? accentColor : '#333333',
                         borderWidth: 1
                     }}>
-                        <TextWidget text={titleText} style={{ fontSize: 11, color: isToday ? '#1A1A1A' : accentColor, fontWeight: 'bold' }} />
+                        <TextWidget text={titleText} style={{ fontSize: 10, color: isToday ? '#1A1A1A' : accentColor, fontWeight: 'bold' }} />
                     </FlexWidget>
 
                     <FlexWidget style={{
                         backgroundColor: '#1E1E1E',
-                        paddingHorizontal: 8,
-                        paddingVertical: 5,
-                        borderRadius: 8,
+                        paddingHorizontal: 6,
+                        paddingVertical: 4,
+                        borderRadius: 6,
                         borderColor: '#2A2A2A',
                         borderWidth: 1
                     }}>
-                        <TextWidget text={`AGE ${age}`} style={{ fontSize: 10, color: secondaryColor, fontWeight: 'bold' }} />
+                        <TextWidget text={`AGE ${age}`} style={{ fontSize: 9, color: secondaryColor, fontWeight: 'bold' }} />
                     </FlexWidget>
                 </FlexWidget>
 
-                <FlexWidget style={{ justifyContent: 'center', width: 'match_parent', marginTop: 2 }}>
+                <FlexWidget style={{ justifyContent: 'center', marginTop: 2 }}>
                     <TextWidget
                         text={(name || 'Birthday').toUpperCase()}
-                        style={{ fontSize: 19, fontWeight: '600', color: '#FFFFFF', letterSpacing: 0.5 }}
+                        style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF', letterSpacing: 0.3 }}
                         maxLines={1}
                     />
                     <TextWidget
                         text={dateText || ''}
-                        style={{ fontSize: 13, color: secondaryColor, marginTop: 4, fontWeight: '500' }}
+                        style={{ fontSize: 12, color: secondaryColor, marginTop: 2, fontWeight: '500' }}
                     />
                 </FlexWidget>
             </FlexWidget>

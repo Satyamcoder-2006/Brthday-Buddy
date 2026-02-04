@@ -57,12 +57,20 @@ export class DeepLinkManager {
      */
     static parsePasswordReset(url: string): boolean {
         try {
+            console.log('🔍 Parsing password reset URL:', url);
             const parsed = Linking.parse(url);
+            console.log('📋 Parsed URL:', JSON.stringify(parsed, null, 2));
             const path = parsed.path;
+            const hostname = parsed.hostname;
 
             // Handle: birthdaybuddy://reset-password
             // Handle: com.satyam.birthdaybuddy://reset-password
-            if (path?.includes('reset-password')) {
+            // Handle: https://birthdaybuddy.app/reset-password
+
+            const isResetPassword = path?.includes('reset-password') || hostname?.includes('reset-password');
+            console.log('✅ Is password reset?', isResetPassword);
+
+            if (isResetPassword) {
                 return true;
             }
             return false;
@@ -83,11 +91,16 @@ export const useDeepLinking = () => {
         // Handle initial URL (app opened from link)
         const handleInitialUrl = async () => {
             const initialUrl = await Linking.getInitialURL();
+            console.log('🚀 Initial URL:', initialUrl);
 
             if (initialUrl) {
                 // Check for password reset
                 if (DeepLinkManager.parsePasswordReset(initialUrl)) {
-                    navigation.navigate('PasswordReset');
+                    console.log('🔐 Navigating to PasswordReset screen...');
+                    // Use setTimeout to ensure navigation is ready
+                    setTimeout(() => {
+                        navigation.navigate('PasswordReset');
+                    }, 100);
                     return;
                 }
 
@@ -107,8 +120,11 @@ export const useDeepLinking = () => {
 
         // Handle URL when app is already open
         const subscription = Linking.addEventListener('url', (event: { url: string }) => {
+            console.log('📱 URL event received:', event.url);
+
             // Check for password reset
             if (DeepLinkManager.parsePasswordReset(event.url)) {
+                console.log('🔐 Navigating to PasswordReset screen...');
                 navigation.navigate('PasswordReset');
                 return;
             }
