@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/party/:path*",
-            "destination": "/index.html"
+            "destination": "/invite.html"
         }
     ],
     "headers": [
