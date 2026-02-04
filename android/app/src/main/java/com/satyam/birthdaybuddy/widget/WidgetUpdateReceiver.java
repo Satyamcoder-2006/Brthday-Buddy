@@ -5,7 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
-import com.reactnativeandroidwidget.RNWidgetProviderHelper;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.text.SimpleDateFormat;
@@ -50,29 +51,35 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
             }
             
             JSONObject widgetData = new JSONObject(widgetDataJson);
-            JSONObject nextBirthday = widgetData.getJSONObject("nextBirthday");
-            JSONArray upcomingBirthdays = widgetData.getJSONArray("upcomingBirthdays");
+            JSONObject nextBirthday = widgetData.optJSONObject("nextBirthday");
+            JSONArray upcomingBirthdays = widgetData.optJSONArray("upcomingBirthdays");
             
-            // Recalculate next birthday countdown
-            String birthdayDate = nextBirthday.getString("birthdayDate");
-            int birthYear = nextBirthday.getInt("birthYear");
-            int newDaysUntil = calculateDaysUntil(birthdayDate);
-            int newAge = calculateAge(birthYear, birthdayDate);
-            
-            // Update JSON
-            nextBirthday.put("daysUntil", newDaysUntil);
-            nextBirthday.put("turningAge", newAge);
-            nextBirthday.put("lastCalculated", new Date().toString());
-            
-            // Recalculate all upcoming birthdays
-            for (int i = 0; i < upcomingBirthdays.length(); i++) {
-                JSONObject birthday = upcomingBirthdays.getJSONObject(i);
-                String bDate = birthday.getString("birthdayDate");
-                int bYear = birthday.getInt("birthYear");
+            if (nextBirthday != null) {
+                // Recalculate next birthday countdown
+                String birthdayDate = nextBirthday.getString("birthdayDate");
+                int birthYear = nextBirthday.getInt("birthYear");
+                int newDaysUntil = calculateDaysUntil(birthdayDate);
+                int newAge = calculateAge(birthYear, birthdayDate);
                 
-                birthday.put("daysUntil", calculateDaysUntil(bDate));
-                birthday.put("turningAge", calculateAge(bYear, bDate));
-                birthday.put("lastCalculated", new Date().toString());
+                // Update JSON
+                nextBirthday.put("daysUntil", newDaysUntil);
+                nextBirthday.put("turningAge", newAge);
+                nextBirthday.put("lastCalculated", new Date().toString());
+                
+                Log.d(TAG, "Widget data recalculated. Days until: " + newDaysUntil);
+            }
+
+            if (upcomingBirthdays != null) {
+                // Recalculate all upcoming birthdays
+                for (int i = 0; i < upcomingBirthdays.length(); i++) {
+                    JSONObject birthday = upcomingBirthdays.getJSONObject(i);
+                    String bDate = birthday.getString("birthdayDate");
+                    int bYear = birthday.getInt("birthYear");
+                    
+                    birthday.put("daysUntil", calculateDaysUntil(bDate));
+                    birthday.put("turningAge", calculateAge(bYear, bDate));
+                    birthday.put("lastCalculated", new Date().toString());
+                }
             }
             
             // Save updated data
@@ -81,20 +88,22 @@ public class WidgetUpdateReceiver extends BroadcastReceiver {
             editor.apply();
             
             // Trigger widget re-render
-            RNWidgetProviderHelper.requestWidgetUpdate(context, BirthdayWidget.class);
+            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+            ComponentName thisWidget = new ComponentName(context, BirthdayWidget.class);
+            int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisWidget);
             
-            Log.d(TAG, "Widget data recalculated. Days until: " + newDaysUntil);
+            // Notify the widget provider that data has changed
+            Intent intent = new Intent(context, BirthdayWidget.class);
+            intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+            context.sendBroadcast(intent);
+            
             
         } catch (Exception e) {
             Log.e(TAG, "Failed to recalculate widget data", e);
         }
     }
     
-    /**
-     * Calculate days until next occurrence of birthday
-     * @param birthdayDate Birthday in "YYYY-MM-DD" format
-     * @return Days until next birthday
-     */
     /**
      * Calculate days until next occurrence of birthday
      * @param birthdayDate Birthday in "YYYY-MM-DD" format
