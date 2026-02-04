@@ -14,10 +14,6 @@ interface WidgetProps extends BirthdayData {
     upcoming?: BirthdayData[];
 }
 
-/**
- * Pseudo-Gradient Container
- * Uses OverlapWidget for layering to simulate a gradient
- */
 const GradientContainer = (props: {
     children: React.ReactNode,
     style?: any,
@@ -25,39 +21,28 @@ const GradientContainer = (props: {
     clickAction?: string,
     clickActionData?: any
 }) => {
-    const { children, style = {}, isToday = false, clickAction, clickActionData } = props;
+    const { children, style = {}, clickAction, clickActionData } = props;
+
+    // We flatten the hierarchy by using a single FlexWidget instead of OverlapWidget + 2 FlexWidgets
+    // This reduces depth by 2 levels, making RemoteViews updates much more stable on Android.
     return (
-        <OverlapWidget
+        <FlexWidget
             style={{
                 height: 'match_parent',
                 width: 'match_parent',
+                backgroundColor: '#161616', // Dark matte base
+                borderRadius: style.borderRadius || 20,
+                padding: style.padding || 14,
+                flexDirection: style.flexDirection || 'column',
+                justifyContent: style.justifyContent || 'flex-start',
+                alignItems: style.alignItems || 'flex-start',
+                ...style
             }}
             clickAction={clickAction}
             clickActionData={clickActionData}
         >
-            <FlexWidget
-                style={{
-                    height: 'match_parent',
-                    width: 'match_parent',
-                    backgroundColor: '#161616', // smooth dark matte
-                    borderRadius: style.borderRadius || 20,
-                }}
-            />
-            {/* Subtle Gradient Overlay Simulation if possible, or just keeping it clean matte */}
-
-            <FlexWidget
-                style={{
-                    height: 'match_parent',
-                    width: 'match_parent',
-                    padding: style.padding || 14,
-                    flexDirection: style.flexDirection || 'column',
-                    justifyContent: style.justifyContent || 'flex-start',
-                    alignItems: style.alignItems || 'flex-start',
-                }}
-            >
-                {children}
-            </FlexWidget>
-        </OverlapWidget>
+            {children}
+        </FlexWidget>
     );
 };
 
@@ -186,7 +171,6 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
     // Status logic
     const statusText = isToday ? 'IT\'S TODAY!' : isTomorrow ? 'TOMORROW' : `IN ${daysUntil} DAYS`;
     const statusColor = isToday ? '#FFD700' : isTomorrow ? '#FF9500' : '#B5B5B5';
-    const accentColor = isToday ? '#FFD700' : '#FF9500';
 
     const bDate = new Date(date);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -194,10 +178,19 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
         ? `${monthNames[bDate.getUTCMonth()]} ${bDate.getUTCDate()}`
         : date || "";
 
+    // Image safety check - ensure URL is valid if provided
+    const hasValidPhoto = !!photoUrl && (photoUrl.startsWith('http') || photoUrl.startsWith('file') || photoUrl.startsWith('content'));
+
     return (
         <GradientContainer
             isToday={isToday}
-            style={{ borderRadius: 20, padding: 0 }}
+            style={{
+                borderRadius: 24,
+                padding: 0,
+                flexDirection: 'row',
+                height: 'match_parent', // Explicit match_parent
+                width: 'match_parent'
+            }}
             clickAction="OPEN_URI"
             clickActionData={{ uri: `birthdaybuddy://birthday/${id}` }}
         >
@@ -205,24 +198,32 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
                 flexDirection: 'row',
                 height: 'match_parent',
                 width: 'match_parent',
-                padding: 16
+                padding: 14 // Internal padding for content
             }}>
-                {/* Left Column - Featured Person */}
-                <FlexWidget style={{ flex: 1.3, justifyContent: 'center', paddingRight: 12 }}>
+                {/* Left Column - Featured Person - Fixed ratio for stability */}
+                <FlexWidget style={{ flex: 13, justifyContent: 'center', paddingRight: 10 }}>
                     <FlexWidget style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                        {/* Avatar */}
+                        {/* Avatar Container */}
                         <FlexWidget style={{
                             width: 52, height: 52, borderRadius: 26,
-                            backgroundColor: '#2A2A2A',
+                            backgroundColor: '#252525',
                             justifyContent: 'center', alignItems: 'center',
                             borderColor: isToday ? '#FFD700' : '#333333',
                             borderWidth: 2,
                             marginRight: 10
                         }}>
-                            {photoUrl ? (
-                                <ImageWidget image={{ uri: photoUrl } as any} imageWidth={52} imageHeight={52} style={{ width: 52, height: 52, borderRadius: 26 }} />
+                            {hasValidPhoto ? (
+                                <ImageWidget
+                                    image={{ uri: photoUrl } as any}
+                                    imageWidth={52}
+                                    imageHeight={52}
+                                    style={{ width: 52, height: 52, borderRadius: 26 }}
+                                />
                             ) : (
-                                <TextWidget text={(name || '?').charAt(0).toUpperCase()} style={{ fontSize: 22, fontWeight: 'bold', color: isToday ? '#FFD700' : '#FFFFFF' }} />
+                                <TextWidget
+                                    text={(name || '?').charAt(0).toUpperCase()}
+                                    style={{ fontSize: 22, fontWeight: 'bold', color: isToday ? '#FFD700' : '#FFFFFF' }}
+                                />
                             )}
                         </FlexWidget>
 
@@ -242,10 +243,10 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
                     <FlexWidget style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <FlexWidget style={{
                             backgroundColor: isToday ? '#FFD700' : '#2A2A2A',
-                            paddingHorizontal: 10,
-                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
                             borderRadius: 6,
-                            marginRight: 10
+                            marginRight: 8
                         }}>
                             <TextWidget
                                 text={`AGE ${age}`}
@@ -259,7 +260,7 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
                     </FlexWidget>
 
                     {isToday && (
-                        <FlexWidget style={{ marginTop: 10 }}>
+                        <FlexWidget style={{ marginTop: 8 }}>
                             <TextWidget
                                 text="✨ Make their day special!"
                                 style={{ fontSize: 9, color: '#FFD700', fontStyle: 'italic' }}
@@ -268,35 +269,35 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl,
                     )}
                 </FlexWidget>
 
-                {/* Vertical Divider */}
-                <FlexWidget style={{ width: 1, backgroundColor: '#2A2A2A', marginVertical: 6 }} />
+                {/* Vertical Divider - Fixed width for stability */}
+                <FlexWidget style={{ width: 1, backgroundColor: '#252525', marginVertical: 8 }} />
 
-                {/* Right Column - Upcoming List */}
-                <FlexWidget style={{ flex: 1, paddingLeft: 14, justifyContent: 'center' }}>
+                {/* Right Column - Upcoming List - Fixed ratio for stability */}
+                <FlexWidget style={{ flex: 10, paddingLeft: 12, justifyContent: 'center' }}>
                     <TextWidget
                         text="UPCOMING"
-                        style={{ fontSize: 8, color: '#666666', fontWeight: 'bold', marginBottom: 8, letterSpacing: 1.2 }}
+                        style={{ fontSize: 8, color: '#666666', fontWeight: 'bold', marginBottom: 6, letterSpacing: 1.2 }}
                     />
 
-                    {upcoming && upcoming.length > 0 ? (
-                        <FlexWidget style={{ width: 'match_parent' }}>
-                            {upcoming.slice(0, 3).map((item, idx) => (
+                    <FlexWidget style={{ width: 'match_parent' }}>
+                        {upcoming && upcoming.length > 0 ? (
+                            upcoming.slice(0, 3).map((item, idx) => (
                                 <UpcomingItem
                                     key={item.id || idx}
                                     name={item.name}
                                     daysUntil={item.daysUntil}
                                     isToday={item.daysUntil === 0}
                                 />
-                            ))}
-                        </FlexWidget>
-                    ) : (
-                        <FlexWidget style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                            <TextWidget
-                                text="No more soon"
-                                style={{ fontSize: 9, color: '#444444' }}
-                            />
-                        </FlexWidget>
-                    )}
+                            ))
+                        ) : (
+                            <FlexWidget style={{ paddingVertical: 10, alignItems: 'center' }}>
+                                <TextWidget
+                                    text="No more soon"
+                                    style={{ fontSize: 9, color: '#444444' }}
+                                />
+                            </FlexWidget>
+                        )}
+                    </FlexWidget>
                 </FlexWidget>
             </FlexWidget>
         </GradientContainer>
