@@ -149,7 +149,13 @@ export const MediumBirthdayWidget = ({ id, name, daysUntil, date, age, photoUrl 
 
     const bDate = new Date(date);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const dateText = `${monthNames[bDate.getUTCMonth()]} ${bDate.getUTCDate()}`;
+
+    let dateText = "";
+    if (!isNaN(bDate.getTime())) {
+        dateText = `${monthNames[bDate.getUTCMonth()]} ${bDate.getUTCDate()}`;
+    } else {
+        dateText = date || ""; // Fallback to raw string if parse fails
+    }
 
     return (
         <GradientContainer

@@ -87,6 +87,57 @@ export class DeepLinkManager {
             return false;
         }
     }
+
+    /**
+     * Extract tokens from URL and set Supabase session
+     */
+    static async handleAuthRecovery(url: string) {
+        try {
+            // Supabase recovery URLs typically put tokens in the hash #access_token=...&refresh_token=...
+            const parsed = Linking.parse(url);
+
+            // Check queryParams first (standard deep link)
+            let accessToken = parsed.queryParams?.access_token as string;
+            let refreshToken = parsed.queryParams?.refresh_token as string;
+
+            // Manual regex parsing for hash fragment if Linking doesn't get it:
+            if (!accessToken && url.includes('access_token=')) {
+                // Parsing hash fragments manually as they might not be in queryParams
+                // Example: ...#access_token=...&refresh_token=...
+                const matchAccess = url.match(/access_token=([^&]+)/);
+                if (matchAccess) accessToken = matchAccess[1];
+
+                const matchRefresh = url.match(/refresh_token=([^&]+)/);
+                if (matchRefresh) refreshToken = matchRefresh[1];
+            }
+
+            if (accessToken && refreshToken) {
+                console.log('🔑 Found tokens in URL, setting session...');
+                const { supabase } = require('../services/supabase');
+
+                if (supabase) {
+                    const { error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                    });
+
+                    if (error) {
+                        console.error('❌ Failed to set recovery session:', error);
+                        return false;
+                    } else {
+                        console.log('✅ Recovery session set successfully');
+                        return true;
+                    }
+                }
+            } else {
+                console.warn('⚠️ Password reset link detected but no tokens found in URL');
+            }
+            return false;
+        } catch (e) {
+            console.error('Error extracting tokens:', e);
+            return false;
+        }
+    }
 }
 
 /**
@@ -104,7 +155,9 @@ export const useDeepLinking = () => {
             if (initialUrl) {
                 // Check for password reset
                 if (DeepLinkManager.parsePasswordReset(initialUrl)) {
-                    console.log('🔐 Navigating to PasswordReset screen...');
+                    console.log('� Navigating to PasswordReset screen...');
+                    await DeepLinkManager.handleAuthRecovery(initialUrl);
+
                     // Use setTimeout to ensure navigation is ready
                     setTimeout(() => {
                         navigation.navigate('PasswordReset');
@@ -127,12 +180,13 @@ export const useDeepLinking = () => {
         handleInitialUrl();
 
         // Handle URL when app is already open
-        const subscription = Linking.addEventListener('url', (event: { url: string }) => {
+        const subscription = Linking.addEventListener('url', async (event: { url: string }) => {
             console.log('📱 URL event received:', event.url);
 
             // Check for password reset
             if (DeepLinkManager.parsePasswordReset(event.url)) {
                 console.log('🔐 Navigating to PasswordReset screen...');
+                await DeepLinkManager.handleAuthRecovery(event.url);
                 navigation.navigate('PasswordReset');
                 return;
             }
